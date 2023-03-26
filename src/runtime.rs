@@ -7,6 +7,7 @@ use crate::{
     tokenizer::tokenize,
 };
 
+#[derive(Default)]
 pub struct Runtime {
     env: Environment,
 }

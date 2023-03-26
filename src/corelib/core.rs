@@ -10,7 +10,7 @@ pub(crate) fn register(env: &mut Environment) -> () {
 
     // internal
 
-    env.add_native("internal.func.nat.call", bi_internal_func_nat_call)
+    env.add_native("internal.func.nat.call", bi_internal_func_nat_call, true)
 }
 
 // Core
