@@ -8,10 +8,10 @@ pub(crate) fn register(env: &mut Environment) -> () {
 
 
 fn bi_internal_func_nat_call(args: &[Value], fenv: &mut Environment) -> Value {
-    fenv.eval_func(&args[0].as_string(), &args[1..])
+    fenv.eval_func(&&args[0].as_string(), &args[1..])
 }
 
-fn bi_internal_func_list(args: &[Value], fenv: &mut Environment) -> Value {
+fn bi_internal_func_list(_args: &[Value], fenv: &mut Environment) -> Value {
     for k in fenv.funcs.keys() {
         println!("Function: {}", k);
     }
