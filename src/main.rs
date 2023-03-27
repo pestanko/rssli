@@ -10,7 +10,7 @@ fn main() -> anyhow::Result<()> {
         let content: String = fs::read_to_string(arg)?;
 
         let mut runtime = Runtime::new_default();
-    
+
         let result = runtime.eval_string(&content);
         println!("result for '{}': {:?}", arg, result);
     }

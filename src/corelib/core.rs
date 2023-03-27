@@ -1,15 +1,13 @@
+use crate::func::{FuncDef, FuncMetadata};
 use crate::{env::Environment, func::FuncKind, parser::Value};
-use crate::func::{FuncMetadata, FuncDef};
 
 pub(crate) fn register(env: &mut Environment) -> () {
     env.add_native("fn", bi_func_def, true);
     env.add_native("def", bi_setvar, true);
     env.add_native("undef", bi_unsetvar, true);
     env.add_native("if", bi_cond_if, true);
-    env.add_native("print", bi_print, false);
 
     // internal
-
     env.add_native("internal.func.nat.call", bi_internal_func_nat_call, true)
 }
 
@@ -17,7 +15,13 @@ pub(crate) fn register(env: &mut Environment) -> () {
 fn bi_func_def(args: &[Value], fenv: &mut Environment) -> Value {
     let name = args[0].as_string();
     log::info!("Defining function: {:?}", name);
-    let func_args: Vec<_> = args.get(1).unwrap().as_list().iter().map(|x| x.as_string()).collect();
+    let func_args: Vec<_> = args
+        .get(1)
+        .unwrap()
+        .as_list()
+        .iter()
+        .map(|x| x.as_string())
+        .collect();
     let body = args[2].clone();
 
     fenv.funcs.set(
@@ -77,13 +81,6 @@ fn bi_cond_if(args: &[Value], fenv: &mut Environment) -> Value {
     }
 }
 
-fn bi_print(args: &[Value], fenv: &mut Environment) -> Value {
-    let parts: Vec<_> = fenv.eval_args(args).iter().map(|x| x.as_string()).collect();
-    let join = parts.join(" ");
-    log::trace!("Print: {}", join);
-    println!("{}", join);
-    Value::Nil
-}
 
 fn bi_internal_func_nat_call(args: &[Value], fenv: &mut Environment) -> Value {
     fenv.eval_func(&args[0].as_string(), &args[1..])

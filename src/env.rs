@@ -61,6 +61,12 @@ impl Environment {
         }
     }
 
+    pub fn eval_symbol(&self, name: &String) -> Value {
+        let val = self.vars.get(name).expect(&format!("Undeclared variable: {}", name));
+        log::debug!("Evaluating symbol: {} to: {:?}", name, val);
+        val
+    }
+
     pub fn eval_list(&mut self, list: &[Value]) -> Value {
         if list.is_empty() {
             return Value::Nil;
