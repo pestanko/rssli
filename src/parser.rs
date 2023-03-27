@@ -32,8 +32,20 @@ impl Display for Value {
     }
 }
 
-impl Value {
-    pub fn as_bool(&self) -> bool {
+impl Into<String> for &Value {
+    fn into(self) -> String {
+        self.to_string()
+    }
+}
+
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        return Value::Bool(value);
+    }
+}
+
+impl Into<bool> for &Value {
+    fn into(self) -> bool {
         match self {
             Value::Int(n) => *n != 0,
             Value::Float(n) => *n != 0.0,
@@ -44,12 +56,16 @@ impl Value {
             Value::Nil => false,
         }
     }
+}
 
-    pub fn as_string(&self) -> String {
-        format!("{}", self)
+impl From<i64> for Value {
+    fn from(value: i64) -> Self {
+        return Value::Int(value);
     }
+}
 
-    pub fn as_int(&self) -> i64 {
+impl Into<i64> for &Value {
+    fn into(self) -> i64 {
         match self {
             Value::Int(x) => *x,
             Value::Float(f) => *f as i64,
@@ -66,8 +82,16 @@ impl Value {
             Value::Nil => 0,
         }
     }
+}
 
-    pub fn as_float(&self) -> f64 {
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Value::Float(value)
+    }
+}
+
+impl Into<f64> for &Value {
+    fn into(self) -> f64 {
         match self {
             Value::Int(x) => *x as f64,
             Value::Float(f) => *f,
@@ -84,12 +108,42 @@ impl Value {
             Value::Nil => 0.0,
         }
     }
+}
 
-    pub fn as_list(&self) -> Vec<Value> {
+impl From<Vec<Value>> for Value {
+    fn from(value: Vec<Value>) -> Self {
+        Self::List(value)
+    }
+}
+
+impl Into<Vec<Value>> for &Value {
+    fn into(self) -> Vec<Value> {
         match self {
             Value::List(l) => l.clone(),
             _ => vec![self.clone()],
         }
+    }
+}
+
+impl Value {
+    pub fn as_bool(&self) -> bool {
+        self.into()
+    }
+
+    pub fn as_string(&self) -> String {
+        format!("{}", self)
+    }
+
+    pub fn as_int(&self) -> i64 {
+        self.into()
+    }
+
+    pub fn as_float(&self) -> f64 {
+        self.into()
+    }
+
+    pub fn as_list(&self) -> Vec<Value> {
+        self.into()
     }
 
     pub fn is_symbol(&self) -> bool {
