@@ -133,6 +133,7 @@ impl Environment {
     }
 
     pub fn add_native(&mut self, name: &str, func: FuncType, same_env: bool) {
+        log::debug!("Adding native function: {}", name);
         self.funcs.set(
             &name.to_string(),
             &FuncKind::Native {

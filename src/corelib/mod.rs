@@ -5,6 +5,7 @@ mod ops;
 mod list;
 mod io;
 mod cast;
+mod internal;
 
 pub(crate) fn register(env: &mut Environment) {
     core::register(env);
@@ -12,4 +13,5 @@ pub(crate) fn register(env: &mut Environment) {
     cast::register(env);
     ops::register(env);
     list::register(env);
+    internal::register(env);
 }

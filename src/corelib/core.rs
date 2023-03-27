@@ -7,8 +7,6 @@ pub(crate) fn register(env: &mut Environment) -> () {
     env.add_native("undef", bi_unsetvar, true);
     env.add_native("if", bi_cond_if, true);
 
-    // internal
-    env.add_native("internal.func.nat.call", bi_internal_func_nat_call, true)
 }
 
 // Core
@@ -79,9 +77,4 @@ fn bi_cond_if(args: &[Value], fenv: &mut Environment) -> Value {
     } else {
         Value::Nil
     }
-}
-
-
-fn bi_internal_func_nat_call(args: &[Value], fenv: &mut Environment) -> Value {
-    fenv.eval_func(&args[0].as_string(), &args[1..])
 }

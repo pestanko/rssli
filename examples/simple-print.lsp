@@ -1,5 +1,5 @@
 (
     (def x 10)
-    (print "hello world!")
-    (print x)
+    (io.print "hello world!")
+    (io.print x)
 )
