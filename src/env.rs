@@ -61,7 +61,7 @@ impl Environment {
                 FuncDef {
                     metadata: FuncMetadata {
                         name: "anonymous".to_owned(),
-                        same_env: true,
+                        same_env: false,
                     },
                     kind: fx.clone(),
                 },
@@ -82,6 +82,27 @@ impl Environment {
         } else {
             panic!("Undeclared variable or function: {}", name);
         }
+    }
+
+    pub fn get_func_def(&self, name: &str) -> FuncDef {
+        let name_ref = &name.to_string();
+        if let Some(val) = self.funcs.get(name_ref) {
+            return val.clone();
+        }
+        
+        if let Some(val) = self.vars.get(name_ref) {
+            if val.is_func() {
+                return FuncDef {
+                    metadata: FuncMetadata {
+                        name: name.to_owned(),
+                        same_env: true,
+                    },
+                    kind: val.as_func(),
+                };
+            }
+        }
+
+        panic!("Undeclared function: {}", name);
     }
 
     pub fn eval_symbol(&self, name: &String) -> Value {
@@ -115,19 +136,8 @@ impl Environment {
             args
         );
 
-        let func = self.get_var_or_func(name);
-        if func.is_func() {
-            let fd = FuncDef {
-                metadata: FuncMetadata {
-                    name: name.to_owned(),
-                    same_env: true,
-                },
-                kind: func.as_func(),
-            };
-            self.eval_any_func(fd, args)
-        } else {
-            panic!("Symbol {} is not a function", name);
-        }
+        let fd = self.get_func_def(name);
+        self.eval_any_func(fd, args)
     }
 
     fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> Value {
