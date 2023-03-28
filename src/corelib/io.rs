@@ -15,7 +15,7 @@ fn bi_print(args: &[Value], fenv: &mut Environment) -> Value {
     let join = parts.join(" ");
     log::trace!("Print: {}", join);
     println!("{}", join);
-    Value::Nil
+    Value::String(join)
 }
 
 fn bi_io_readline(args: &[Value], fenv: &mut Environment) -> Value {

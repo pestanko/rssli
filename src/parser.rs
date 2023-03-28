@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::func::FuncKind;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct FuncValue {
     pub args: Vec<String>,
@@ -14,7 +16,7 @@ pub enum Value {
     Symbol(String),
     List(Vec<Value>),
     Bool(bool),
-    Func(FuncValue),
+    Func(FuncKind),
     Nil,
 }
 
@@ -34,16 +36,7 @@ impl Display for Value {
                     .join(", ")
             ),
             Value::Bool(x) => write!(f, "{}", x),
-            Value::Func(x) => write!(
-                f,
-                "([{}]; {})",
-                x.args
-                    .iter()
-                    .map(|x| format!("{}", x))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-                x.body,
-            ),
+            Value::Func(x) => write!(f, "{:?}", x),
             Value::Nil => write!(f, "nil"),
         }
     }
@@ -166,7 +159,7 @@ impl Value {
         self.into()
     }
 
-    pub fn as_func(&self) -> FuncValue {
+    pub fn as_func(&self) -> FuncKind {
         match self {
             Value::Func(f) => f.clone(),
             _ => panic!("Value is not a function"),

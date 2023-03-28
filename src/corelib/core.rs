@@ -1,4 +1,4 @@
-use crate::func::FuncMetadata;
+use crate::func::{FuncDef, FuncMetadata};
 use crate::parser::FuncValue;
 use crate::{env::Environment, func::FuncKind, parser::Value};
 
@@ -28,23 +28,24 @@ fn bi_func_def(args: &[Value], fenv: &mut Environment) -> Value {
 
     let func = FuncValue {
         args: func_args,
-        body: Box::new( args[start_from + 1].clone()),
+        body: Box::new(args[start_from + 1].clone()),
     };
+    let kind = FuncKind::Defined(func.clone());
 
-    let kind = FuncKind::Defined {
+    if name == "anonymous" {
+        return Value::Func(kind);
+    }
+
+    let df = FuncDef {
         metadata: FuncMetadata {
             name: name.to_string(),
             same_env: false,
         },
-        func: func.clone(),
+        kind: kind.clone(),
     };
 
-    if name == "anonymous" {
-        return Value::Func(func);
-    }
-
-    fenv.funcs.set(&name, &kind);
-    Value::Func(func)
+    fenv.funcs.set(&name, &df);
+    Value::Func(kind)
 }
 
 fn bi_setvar(args: &[Value], fenv: &mut Environment) -> Value {

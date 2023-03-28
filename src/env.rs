@@ -1,13 +1,13 @@
-use crate::func::FuncMetadata;
+use crate::func::{FuncDef, FuncMetadata, FuncType};
 use crate::{
-    func::{FuncKind, FuncType},
+    func::FuncKind,
     parser::{FuncValue, Value},
     utils::HierCellMapWrap,
 };
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 
-type FuncsType = HierCellMapWrap<String, FuncKind>;
+type FuncsType = HierCellMapWrap<String, FuncDef>;
 type VarsType = HierCellMapWrap<String, Value>;
 
 #[derive(Clone)]
@@ -56,21 +56,31 @@ impl Environment {
     pub fn eval(&mut self, value: &Value) -> Value {
         match value {
             Value::List(l) => self.eval_list(l),
-            Value::Symbol(name) => self
-                .vars
-                .get(name)
-                .expect(&format!("Undeclared variable: {}", name)),
+            Value::Symbol(name) => self.get_var_or_func(name),
             Value::Func(fx) => self.eval_any_func(
-                FuncKind::Defined {
+                FuncDef {
                     metadata: FuncMetadata {
                         name: "anonymous".to_owned(),
-                        same_env: false,
+                        same_env: true,
                     },
-                    func: fx.clone(),
+                    kind: fx.clone(),
                 },
                 &[],
             ),
             _ => value.clone(),
+        }
+    }
+
+    pub fn get_var_or_func(&self, name: &str) -> Value {
+        let name_ref = &name.to_string();
+        log::debug!("Vars: {:?}", self.vars.keys());
+        if let Some(val) = self.vars.get(name_ref) {
+            return val.clone();
+        }
+        if let Some(val) = self.funcs.get(name_ref) {
+            return Value::Func(val.kind.clone());
+        } else {
+            panic!("Undeclared variable or function: {}", name);
         }
     }
 
@@ -105,25 +115,19 @@ impl Environment {
             args
         );
 
-        let func = if let Some(fk) = self.funcs.get(&name.to_string()) {
-            fk.clone()
-        } else if let Some(fk) = self.vars.get(&name.to_string()) {
-            if fk.is_func() {
-                FuncKind::Defined {
-                    metadata: FuncMetadata {
-                        name: name.to_owned(),
-                        same_env: false,
-                    },
-                    func: fk.as_func().clone(),
-                }
-            } else {
-                panic!("Variable {} is not a function", name);
-            }
+        let func = self.get_var_or_func(name);
+        if func.is_func() {
+            let fd = FuncDef {
+                metadata: FuncMetadata {
+                    name: name.to_owned(),
+                    same_env: true,
+                },
+                kind: func.as_func(),
+            };
+            self.eval_any_func(fd, args)
         } else {
-            panic!("No function found with name: {}", name);
-        };
-
-        self.eval_any_func(func, args)
+            panic!("Symbol {} is not a function", name);
+        }
     }
 
     fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> Value {
@@ -139,24 +143,22 @@ impl Environment {
         self.eval(&func.body)
     }
 
-    fn eval_any_func(&mut self, func: FuncKind, args: &[Value]) -> Value {
+    fn eval_any_func(&mut self, func: FuncDef, args: &[Value]) -> Value {
         let mut new_env = self.make_child();
-        let result = match func {
-            FuncKind::Native { metadata, func } => {
-                let env = if metadata.same_env {
-                    self
-                } else {
-                    &mut new_env
-                };
+        let metadata = &func.metadata;
+
+        let env = if metadata.same_env {
+            self
+        } else {
+            &mut new_env
+        };
+
+        let result = match func.kind {
+            FuncKind::Native(func) => {
                 log::trace!("Calling nat [{}] with env: {:?}", metadata.name, env);
                 func(args, env)
             }
-            FuncKind::Defined { metadata, func } => {
-                let env = if metadata.same_env {
-                    self
-                } else {
-                    &mut new_env
-                };
+            FuncKind::Defined(func) => {
                 log::debug!("Calling def [{}] with env: {:?}", metadata.name, env);
                 env.eval_def_func(func.clone(), args)
             }
@@ -177,16 +179,16 @@ impl Environment {
     }
 
     pub fn add_native(&mut self, name: &str, func: FuncType, same_env: bool) {
-        log::debug!("Adding native function: {}", name);
-        self.funcs.set(
-            &name.to_string(),
-            &FuncKind::Native {
-                metadata: FuncMetadata {
-                    name: name.to_string(),
-                    same_env,
-                },
-                func,
-            },
-        )
+        let metadata = FuncMetadata {
+            name: name.to_string(),
+            same_env,
+        };
+        log::debug!("Adding native function: {:?}", metadata);
+        let df = FuncDef {
+            metadata: metadata,
+            kind: FuncKind::Native(func),
+        };
+
+        self.funcs.set(&name.to_string(), &df)
     }
 }
