@@ -42,7 +42,7 @@ impl Display for Value {
                     .map(|x| format!("{}", x))
                     .collect::<Vec<String>>()
                     .join(", "),
-                    x.body,
+                x.body,
             ),
             Value::Nil => write!(f, "nil"),
         }
@@ -96,7 +96,7 @@ impl Into<i64> for &Value {
                 } else {
                     0
                 }
-            },
+            }
             Value::Func(_) => 0,
             Value::Nil => 0,
         }
@@ -164,6 +164,13 @@ impl Value {
 
     pub fn as_list(&self) -> Vec<Value> {
         self.into()
+    }
+
+    pub fn as_func(&self) -> FuncValue {
+        match self {
+            Value::Func(f) => f.clone(),
+            _ => panic!("Value is not a function"),
+        }
     }
 
     pub fn is_symbol(&self) -> bool {

@@ -1,4 +1,5 @@
-use crate::func::{FuncDef, FuncMetadata};
+use crate::func::FuncMetadata;
+use crate::parser::FuncValue;
 use crate::{env::Environment, func::FuncKind, parser::Value};
 
 pub(crate) fn register(env: &mut Environment) -> () {
@@ -6,36 +7,44 @@ pub(crate) fn register(env: &mut Environment) -> () {
     env.add_native("def", bi_setvar, true);
     env.add_native("undef", bi_unsetvar, true);
     env.add_native("if", bi_cond_if, true);
-
 }
 
 // Core
 fn bi_func_def(args: &[Value], fenv: &mut Environment) -> Value {
-    let name = args[0].as_string();
+    let (name, start_from) = if args[0].is_list() {
+        ("anonymous".to_owned(), 0)
+    } else {
+        (args[0].as_string(), 1)
+    };
+
     log::info!("Defining function: {:?}", name);
     let func_args: Vec<_> = args
-        .get(1)
+        .get(start_from)
         .unwrap()
         .as_list()
         .iter()
         .map(|x| x.as_string())
         .collect();
-    let body = args[2].clone();
 
-    fenv.funcs.set(
-        &name,
-        &FuncKind::Defined {
-            metadata: FuncMetadata {
-                name: name.to_string(),
-                same_env: false,
-            },
-            func: FuncDef {
-                func_args,
-                func: body,
-            },
+    let func = FuncValue {
+        args: func_args,
+        body: Box::new( args[start_from + 1].clone()),
+    };
+
+    let kind = FuncKind::Defined {
+        metadata: FuncMetadata {
+            name: name.to_string(),
+            same_env: false,
         },
-    );
-    Value::Symbol(name)
+        func: func.clone(),
+    };
+
+    if name == "anonymous" {
+        return Value::Func(func);
+    }
+
+    fenv.funcs.set(&name, &kind);
+    Value::Func(func)
 }
 
 fn bi_setvar(args: &[Value], fenv: &mut Environment) -> Value {

@@ -1,11 +1,11 @@
+use crate::func::FuncMetadata;
 use crate::{
     func::{FuncKind, FuncType},
-    parser::Value,
+    parser::{FuncValue, Value},
     utils::HierCellMapWrap,
 };
-use std::fmt::{Debug, Formatter};
 use std::fmt;
-use crate::func::FuncMetadata;
+use std::fmt::{Debug, Formatter};
 
 type FuncsType = HierCellMapWrap<String, FuncKind>;
 type VarsType = HierCellMapWrap<String, Value>;
@@ -56,13 +56,29 @@ impl Environment {
     pub fn eval(&mut self, value: &Value) -> Value {
         match value {
             Value::List(l) => self.eval_list(l),
-            Value::Symbol(name) => self.vars.get(name).expect(&format!("Undeclared variable: {}", name)),
+            Value::Symbol(name) => self
+                .vars
+                .get(name)
+                .expect(&format!("Undeclared variable: {}", name)),
+            Value::Func(fx) => self.eval_any_func(
+                FuncKind::Defined {
+                    metadata: FuncMetadata {
+                        name: "anonymous".to_owned(),
+                        same_env: false,
+                    },
+                    func: fx.clone(),
+                },
+                &[],
+            ),
             _ => value.clone(),
         }
     }
 
     pub fn eval_symbol(&self, name: &String) -> Value {
-        let val = self.vars.get(name).expect(&format!("Undeclared variable: {}", name));
+        let val = self
+            .vars
+            .get(name)
+            .expect(&format!("Undeclared variable: {}", name));
         log::debug!("Evaluating symbol: {} to: {:?}", name, val);
         val
     }
@@ -83,37 +99,53 @@ impl Environment {
     }
 
     pub fn eval_func(&mut self, name: &str, args: &[Value]) -> Value {
-        log::debug!("[EVAL] Evaluating function: \"{}\" with args {:?}", name, args);
+        log::debug!(
+            "[EVAL] Evaluating function: \"{}\" with args {:?}",
+            name,
+            args
+        );
 
         let func = self
             .funcs
             .get(&name.to_string())
             .expect(&format!("No function found with name: {}", name));
+
+        self.eval_any_func(func, args)
+    }
+
+    fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> Value {
+        for (i, func_arg) in func.args.iter().enumerate() {
+            if i < args.len() {
+                let value = self.eval(&args[i]);
+                self.vars.set(func_arg, &value);
+            }
+        }
+
+        log::debug!("Calling function with env: {:?}", self);
+
+        self.eval(&func.body)
+    }
+
+    fn eval_any_func(&mut self, func: FuncKind, args: &[Value]) -> Value {
         let mut new_env = self.make_child();
         let result = match func {
-            FuncKind::Native {
-                metadata,
-                func,
-            } => {
-                let env = if metadata.same_env { self } else { &mut new_env };
-                log::trace!("Calling nat [{}] with env: {:?}", name, env);
+            FuncKind::Native { metadata, func } => {
+                let env = if metadata.same_env {
+                    self
+                } else {
+                    &mut new_env
+                };
+                log::trace!("Calling nat [{}] with env: {:?}", metadata.name, env);
                 func(args, env)
             }
-            FuncKind::Defined {
-                metadata, func
-            } => {
-                let env = if metadata.same_env { self } else { &mut new_env };
-
-                for (i, func_arg) in func.func_args.iter().enumerate() {
-                    if i < args.len() {
-                        let value = env.eval(&args[i]);
-                        env.vars.set(func_arg, &value);
-                    }
-                }
-
-                log::debug!("Calling def [{}] with env: {:?}", name, env);
-
-                env.eval(&func.func)
+            FuncKind::Defined { metadata, func } => {
+                let env = if metadata.same_env {
+                    self
+                } else {
+                    &mut new_env
+                };
+                log::debug!("Calling def [{}] with env: {:?}", metadata.name, env);
+                env.eval_def_func(func.clone(), args)
             }
         };
 
@@ -123,11 +155,10 @@ impl Environment {
             result
         };
 
-        log::debug!("Function[{}] result: {:?}", name, final_result);
+        log::debug!("Function call result: {:?}", final_result);
 
         final_result
     }
-
     pub fn eval_args(&mut self, args: &[Value]) -> Vec<Value> {
         args.iter().map(|arg| self.eval(arg)).collect()
     }
@@ -139,7 +170,7 @@ impl Environment {
             &FuncKind::Native {
                 metadata: FuncMetadata {
                     name: name.to_string(),
-                    same_env
+                    same_env,
                 },
                 func,
             },
