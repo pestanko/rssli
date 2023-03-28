@@ -1,6 +1,12 @@
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct FuncValue {
+    pub args: Vec<String>,
+    pub body: Box<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Value {
     Int(i64),
     Float(f64),
@@ -8,6 +14,7 @@ pub enum Value {
     Symbol(String),
     List(Vec<Value>),
     Bool(bool),
+    Func(FuncValue),
     Nil,
 }
 
@@ -27,6 +34,16 @@ impl Display for Value {
                     .join(", ")
             ),
             Value::Bool(x) => write!(f, "{}", x),
+            Value::Func(x) => write!(
+                f,
+                "([{}]; {})",
+                x.args
+                    .iter()
+                    .map(|x| format!("{}", x))
+                    .collect::<Vec<String>>()
+                    .join(", "),
+                    x.body,
+            ),
             Value::Nil => write!(f, "nil"),
         }
     }
@@ -53,6 +70,7 @@ impl Into<bool> for &Value {
             Value::Symbol(s) => s.is_empty(),
             Value::List(v) => v.is_empty(),
             Value::Bool(v) => *v,
+            Value::Func(_) => true,
             Value::Nil => false,
         }
     }
@@ -78,7 +96,8 @@ impl Into<i64> for &Value {
                 } else {
                     0
                 }
-            }
+            },
+            Value::Func(_) => 0,
             Value::Nil => 0,
         }
     }
@@ -105,6 +124,7 @@ impl Into<f64> for &Value {
                     0.0
                 }
             }
+            Value::Func(_) => 0.0,
             Value::Nil => 0.0,
         }
     }
@@ -195,6 +215,13 @@ impl Value {
         }
     }
 
+    pub fn is_func(&self) -> bool {
+        match self {
+            Value::Func(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn type_name(&self) -> &'static str {
         match self {
             Value::Int(_) => "integer",
@@ -203,6 +230,7 @@ impl Value {
             Value::Symbol(_) => "symbol",
             Value::List(_) => "list",
             Value::Bool(_) => "bool",
+            Value::Func(_) => "function",
             Value::Nil => "nil",
         }
     }
