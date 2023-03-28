@@ -105,10 +105,23 @@ impl Environment {
             args
         );
 
-        let func = self
-            .funcs
-            .get(&name.to_string())
-            .expect(&format!("No function found with name: {}", name));
+        let func = if let Some(fk) = self.funcs.get(&name.to_string()) {
+            fk.clone()
+        } else if let Some(fk) = self.vars.get(&name.to_string()) {
+            if fk.is_func() {
+                FuncKind::Defined {
+                    metadata: FuncMetadata {
+                        name: name.to_owned(),
+                        same_env: false,
+                    },
+                    func: fk.as_func().clone(),
+                }
+            } else {
+                panic!("Variable {} is not a function", name);
+            }
+        } else {
+            panic!("No function found with name: {}", name);
+        };
 
         self.eval_any_func(func, args)
     }
