@@ -1,4 +1,4 @@
-use crate::{env::Environment, parser::Value};
+use crate::{env::Environment, parser::{Value, FuncValue}};
 
 pub type FuncType = fn(args: &[Value], fenv: &mut Environment) -> Value;
 
@@ -10,7 +10,7 @@ pub enum FuncKind {
     },
     Defined {
         metadata: FuncMetadata,
-        func: FuncDef,
+        func: FuncValue,
     },
 }
 
@@ -18,10 +18,4 @@ pub enum FuncKind {
 pub struct FuncMetadata {
     pub name: String,
     pub same_env: bool,
-}
-
-#[derive(Clone, Debug)]
-pub struct FuncDef {
-    pub func_args: Vec<String>,
-    pub func: Value,
 }

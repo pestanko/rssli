@@ -31,10 +31,16 @@ impl Runtime {
         let tokens = tokenize(prog);
         let parsed = parse_tokens(&tokens);
 
-        if parsed.len() == 1 {
+        let res = if parsed.len() == 1 {
             self.env.eval(parsed.get(0).unwrap())
         } else {
             self.env.eval(&Value::List(parsed))
+        };
+
+        if let Value::List(lst) = res {
+            lst.last().unwrap().clone()
+        } else {
+            res
         }
     }
 }
@@ -68,14 +74,7 @@ mod tests {
 
         assert_eq!(
             result,
-            Value::List(vec![
-                Value::Int(20),
-                Value::Int(13),
-                Value::Int(21),
-                Value::Int(2),
-                Value::Float(7.5),
-                Value::String("Ahoj svet".to_string()),
-            ])
+            Value::String("Ahoj svet".to_string()),
         )
     }
 
@@ -88,9 +87,9 @@ mod tests {
         (
            (def x 5)
            (def y 8)
-           (+ x y)
+           (def z (+ x y))
 
-           (def x (+ 8 9))
+           (def x (+ z 9))
            (+ x 20)
         )
         "#,
@@ -98,13 +97,7 @@ mod tests {
 
         assert_eq!(
             result,
-            Value::List(vec![
-                Value::Int(5),
-                Value::Int(8),
-                Value::Int(13),
-                Value::Int(17),
-                Value::Int(37),
-            ]),
+            Value::Int(42),
         );
     }
 
@@ -130,12 +123,10 @@ mod tests {
            )
            (factorial 5)
         )
-        "#);
-
-        assert_eq!(
-            result,
-            Value::List(vec![Value::Symbol("inc".to_string()), Value::Symbol("dec".to_string()), Value::Symbol("factorial".to_string()), Value::Int(120), ]),
+        "#,
         );
+
+        assert_eq!(result, Value::Int(120));
     }
 
     #[test]
@@ -156,12 +147,10 @@ mod tests {
             )
            (fib 12)
         )
-        "#);
-
-        assert_eq!(
-            result,
-            Value::List(vec![Value::Symbol("fib".to_string()), Value::Int(144), ]),
+        "#,
         );
+
+        assert_eq!(result, Value::Int(144),);
     }
 
     #[test]
@@ -175,11 +164,12 @@ mod tests {
            (fn func2(c) (func 5))
            (func2 10)
         )
-        "#);
+        "#,
+        );
 
         assert_eq!(
             result,
-            Value::List(vec![Value::Symbol("func".to_string()), Value::Symbol("func2".to_string()), Value::Int(15), ]),
+            Value::Int(15),
         );
     }
 }

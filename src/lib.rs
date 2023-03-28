@@ -5,3 +5,6 @@ pub mod parser;
 pub mod runtime;
 pub mod tokenizer;
 mod utils;
+
+
+pub use crate::runtime::Runtime;
