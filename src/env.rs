@@ -56,7 +56,7 @@ impl Environment {
     pub fn eval(&mut self, value: &Value) -> Value {
         match value {
             Value::List(l) => self.eval_list(l),
-            Value::Symbol(name) => self.get_var_or_func(name),
+            Value::Symbol(name) => self.get_var_or_func(name).unwrap(),
             Value::Func(fx) => self.eval_any_func(
                 FuncDef {
                     metadata: FuncMetadata {
@@ -71,33 +71,32 @@ impl Environment {
         }
     }
 
-    pub fn get_var_or_func(&self, name: &str) -> Value {
+    pub fn get_var_or_func(&self, name: &str) -> anyhow::Result<Value> {
         let name_ref = &name.to_string();
         if let Some(val) = self.vars.get(name_ref) {
-            return val.clone();
+            return Ok(val.clone());
         }
         if let Some(val) = self.funcs.get(name_ref) {
-            return Value::Func(val.kind.clone());
-        } else {
-            panic!("Undeclared variable or function: {}", name);
+            return Ok(Value::Func(val.kind.clone()));
         }
+        anyhow::bail!("Undeclared variable or function: {}", name)
     }
 
-    pub fn get_func_def(&self, name: &str) -> FuncDef {
+    pub fn get_func_def(&self, name: &str) -> anyhow::Result<FuncDef> {
         let name_ref = &name.to_string();
         if let Some(val) = self.funcs.get(name_ref) {
-            return val.clone();
+            return Ok(val.clone());
         }
 
         if let Some(val) = self.vars.get(name_ref) {
             if val.is_func() {
-                return FuncDef {
+                return Ok(FuncDef {
                     metadata: FuncMetadata {
                         name: name.to_owned(),
                         same_env: true,
                     },
                     kind: val.as_func(),
-                };
+                });
             }
         }
 
@@ -138,7 +137,7 @@ impl Environment {
             args
         );
 
-        let fd = self.get_func_def(name);
+        let fd = self.get_func_def(name).unwrap();
         self.eval_any_func(fd, args)
     }
 
@@ -186,6 +185,7 @@ impl Environment {
 
         final_result
     }
+
     pub fn eval_args(&mut self, args: &[Value]) -> Vec<Value> {
         args.iter().map(|arg| self.eval(arg)).collect()
     }
