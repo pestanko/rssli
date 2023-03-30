@@ -26,10 +26,12 @@ fn bi_func_def(args: &[Value], fenv: &mut Environment) -> Value {
         .map(|x| x.as_string())
         .collect();
 
+    let body = args[start_from + 1].clone();
     let func = FuncValue {
         args: func_args,
-        body: Box::new(args[start_from + 1].clone()),
+        body: Box::new(body),
     };
+
     let kind = FuncKind::Defined(func);
 
     if name == "anonymous" {

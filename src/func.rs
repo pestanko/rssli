@@ -5,7 +5,7 @@ use crate::{
 
 pub type FuncType = fn(args: &[Value], fenv: &mut Environment) -> Value;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FuncDef {
     pub metadata: FuncMetadata,
     pub kind: FuncKind,
