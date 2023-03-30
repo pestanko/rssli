@@ -6,7 +6,9 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("fn", bi_func_def, true);
     env.add_native("def", bi_setvar, true);
     env.add_native("undef", bi_unsetvar, true);
-    env.add_native("if", bi_cond_if, true);
+    env.add_native("if", bi_cond_if, false);
+    env.add_native("while", cycle_while, false);
+    env.add_native("for", cycle_for, false);
 }
 
 // Core
@@ -89,4 +91,27 @@ fn bi_cond_if(args: &[Value], fenv: &mut Environment) -> Value {
     } else {
         Value::Nil
     }
+}
+
+fn cycle_while(args: &[Value], fenv: &mut Environment) -> Value {
+    let mut cond = true;
+    while cond {
+        cond = fenv.eval(&args[0]).as_bool();
+        fenv.eval(&args[1]);
+    }
+    Value::Nil
+}
+
+/**
+ * (for (i) (list.seq 1 10) (body) )
+ */
+fn cycle_for(args: &[Value], fenv: &mut Environment) -> Value {
+    let it = args[0].as_string();
+    let seq = fenv.eval(&args[1]).as_list();
+    for i in &seq {
+        fenv.vars.set(&it, i);
+        fenv.eval(&args[2]);
+    }
+
+    Value::Nil
 }
