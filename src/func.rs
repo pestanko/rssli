@@ -11,6 +11,18 @@ pub struct FuncDef {
     pub kind: FuncKind,
 }
 
+impl FuncDef {
+    pub fn anonymous(kind: FuncKind) -> Self {
+        Self {
+            metadata: FuncMetadata {
+                name: "anonymous".to_owned(),
+                same_env: false,
+            },
+            kind: kind,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct FuncMetadata {
     pub name: String,

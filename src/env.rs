@@ -73,7 +73,6 @@ impl Environment {
 
     pub fn get_var_or_func(&self, name: &str) -> Value {
         let name_ref = &name.to_string();
-        log::debug!("Vars: {:?}", self.vars.keys());
         if let Some(val) = self.vars.get(name_ref) {
             return val.clone();
         }
@@ -89,7 +88,7 @@ impl Environment {
         if let Some(val) = self.funcs.get(name_ref) {
             return val.clone();
         }
-        
+
         if let Some(val) = self.vars.get(name_ref) {
             if val.is_func() {
                 return FuncDef {
@@ -123,6 +122,9 @@ impl Environment {
             // it is a function - so call it
             let fn_name = list[0].as_string();
             self.eval_func(&fn_name, &list[1..])
+        } else if list[0].is_func() {
+            let df = FuncDef::anonymous(list[0].as_func());
+            self.eval_any_func(df, &list[1..])
         } else {
             let evaluated: Vec<Value> = list.iter().map(|arg| self.eval(arg)).collect();
             Value::List(evaluated)
