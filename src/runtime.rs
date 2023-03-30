@@ -27,9 +27,9 @@ impl Runtime {
         run
     }
 
-    pub fn eval_string(&mut self, prog: &str) -> Value {
-        let tokens = tokenize(prog);
-        let parsed = parse_tokens(&tokens);
+    pub fn eval_string(&mut self, prog: &str) -> anyhow::Result<Value> {
+        let tokens = tokenize(prog)?;
+        let parsed = parse_tokens(&tokens)?;
 
         let res = if parsed.len() == 1 {
             self.env.eval(parsed.get(0).unwrap())
@@ -37,11 +37,12 @@ impl Runtime {
             self.env.eval(&Value::List(parsed))
         };
 
-        if let Value::List(lst) = res {
-            lst.last().unwrap().clone()
+        let final_res = if let Value::List(lst) = res {
+            lst.last().cloned().unwrap()
         } else {
             res
-        }
+        };
+        Ok(final_res)
     }
 }
 
@@ -70,7 +71,7 @@ mod tests {
             (+ "Ahoj" " svet")
         )
         "#,
-        );
+        ).unwrap();
 
         assert_eq!(
             result,
@@ -93,7 +94,7 @@ mod tests {
            (+ x 20)
         )
         "#,
-        );
+        ).unwrap();
 
         assert_eq!(
             result,
@@ -124,7 +125,7 @@ mod tests {
            (factorial 5)
         )
         "#,
-        );
+        ).unwrap();
 
         assert_eq!(result, Value::Int(120));
     }
@@ -148,7 +149,7 @@ mod tests {
            (fib 12)
         )
         "#,
-        );
+        ).unwrap();
 
         assert_eq!(result, Value::Int(144),);
     }
@@ -168,7 +169,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.unwrap(),
             Value::Int(15),
         );
     }

@@ -1,5 +1,4 @@
 use std::fmt::Display;
-
 use crate::func::FuncKind;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -80,7 +79,7 @@ impl Into<i64> for &Value {
         match self {
             Value::Int(x) => *x,
             Value::Float(f) => *f as i64,
-            Value::String(s) => s.parse::<i64>().unwrap(),
+            Value::String(s) => s.parse::<i64>().expect("Cannot convert string to int"),
             Value::Symbol(_) => 0,
             Value::List(_) => 0,
             Value::Bool(b) => {
@@ -107,7 +106,7 @@ impl Into<f64> for &Value {
         match self {
             Value::Int(x) => *x as f64,
             Value::Float(f) => *f,
-            Value::String(s) => s.parse::<f64>().unwrap(),
+            Value::String(s) => s.parse::<f64>().expect("Cannot convert string to float"),
             Value::Symbol(_) => 0.0,
             Value::List(l) => l.len() as f64,
             Value::Bool(b) => {
@@ -236,17 +235,18 @@ impl Value {
     }
 }
 
-pub fn parse_tokens(tokens: &[String]) -> Vec<Value> {
-    let (_, val) = parse_tokens_from(tokens, 0);
-    val
+pub fn parse_tokens(tokens: &[String]) -> anyhow::Result<Vec<Value>> {
+    parse_tokens_from(tokens, 0).map(|(_, x)| x)
 }
 
-fn parse_tokens_from(tokens: &[String], from: usize) -> (usize, Vec<Value>) {
+fn parse_tokens_from(tokens: &[String], from: usize) -> anyhow::Result<(usize, Vec<Value>)> {
     let mut values: Vec<Value> = Vec::new();
 
     let mut pos = from;
     while pos < tokens.len() {
-        let token = tokens.get(pos).unwrap();
+        let token = tokens
+            .get(pos)
+            .ok_or(anyhow::anyhow!("unable to get token"))?;
         if token == "nil" {
             values.push(Value::Nil);
         } else if token == "true" {
@@ -257,21 +257,21 @@ fn parse_tokens_from(tokens: &[String], from: usize) -> (usize, Vec<Value>) {
             values.push(Value::String(token[1..].to_string()));
         } else if token == "(" {
             // recursive call
-            let (np, vals) = parse_tokens_from(tokens, pos + 1);
+            let (np, vals) = parse_tokens_from(tokens, pos + 1)?;
             values.push(Value::List(vals));
             pos = np - 1;
         } else if token == ")" {
-            return (pos + 1, values);
+            return Ok((pos + 1, values));
         } else if let Ok(number) = token.parse::<i64>() {
             values.push(Value::Int(number));
         } else if let Ok(number) = token.parse::<f64>() {
             values.push(Value::Float(number));
         } else if token.starts_with("0x") {
             let without_prefix = token.trim_start_matches("0x");
-            values.push(Value::Int(i64::from_str_radix(without_prefix, 16).unwrap()));
+            values.push(Value::Int(i64::from_str_radix(without_prefix, 16)?));
         } else if token.starts_with("0b") {
             let without_prefix = token.trim_start_matches("0b");
-            values.push(Value::Int(i64::from_str_radix(without_prefix, 2).unwrap()));
+            values.push(Value::Int(i64::from_str_radix(without_prefix, 2)?));
         } else {
             values.push(Value::Symbol(token.to_string()));
         }
@@ -279,7 +279,7 @@ fn parse_tokens_from(tokens: &[String], from: usize) -> (usize, Vec<Value>) {
         pos += 1;
     }
 
-    (pos, values)
+    Ok((pos, values))
 }
 
 #[cfg(test)]
@@ -288,25 +288,40 @@ mod tests {
 
     #[test]
     fn test_parse_simple_tokens() {
-        assert_eq!(parse_tokens(&["true".to_string()]), vec![Value::Bool(true)]);
         assert_eq!(
-            parse_tokens(&["false".to_string()]),
+            parse_tokens(&["true".to_string()]).unwrap(),
+            vec![Value::Bool(true)]
+        );
+        assert_eq!(
+            parse_tokens(&["false".to_string()]).unwrap(),
             vec![Value::Bool(false)]
         );
-        assert_eq!(parse_tokens(&["nil".to_string()]), vec![Value::Nil]);
-        assert_eq!(parse_tokens(&["158".to_string()]), vec![Value::Int(158)]);
         assert_eq!(
-            parse_tokens(&["0x158".to_string()]),
+            parse_tokens(&["nil".to_string()]).unwrap(),
+            vec![Value::Nil]
+        );
+        assert_eq!(
+            parse_tokens(&["158".to_string()]).unwrap(),
+            vec![Value::Int(158)]
+        );
+        assert_eq!(
+            parse_tokens(&["0x158".to_string()]).unwrap(),
             vec![Value::Int(0x158)]
         );
-        assert_eq!(parse_tokens(&["0b100".to_string()]), vec![Value::Int(4)]);
-        assert_eq!(parse_tokens(&["-158".to_string()]), vec![Value::Int(-158)]);
         assert_eq!(
-            parse_tokens(&["158.0".to_string()]),
+            parse_tokens(&["0b100".to_string()]).unwrap(),
+            vec![Value::Int(4)]
+        );
+        assert_eq!(
+            parse_tokens(&["-158".to_string()]).unwrap(),
+            vec![Value::Int(-158)]
+        );
+        assert_eq!(
+            parse_tokens(&["158.0".to_string()]).unwrap(),
             vec![Value::Float(158.0)]
         );
         assert_eq!(
-            parse_tokens(&["158.5".to_string()]),
+            parse_tokens(&["158.5".to_string()]).unwrap(),
             vec![Value::Float(158.5)]
         );
     }

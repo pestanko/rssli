@@ -11,7 +11,7 @@ fn main() -> anyhow::Result<()> {
 
         let mut runtime = Runtime::new_default();
 
-        let result = runtime.eval_string(&content);
+        let result = runtime.eval_string(&content)?;
         println!("result for '{}': {:?}", arg, result);
     }
 

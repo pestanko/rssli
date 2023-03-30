@@ -1,4 +1,4 @@
-pub fn tokenize(orig: &str) -> Vec<String> {
+pub fn tokenize(orig: &str) -> anyhow::Result<Vec<String>> {
     let mut tokens = Vec::new();
 
     let mut buffer = String::new();
@@ -55,7 +55,7 @@ pub fn tokenize(orig: &str) -> Vec<String> {
         }
     }
 
-    tokens
+    Ok(tokens)
 }
 
 #[cfg(test)]
@@ -64,21 +64,21 @@ mod tests {
 
     #[test]
     fn test_tokens_simple_expressions() {
-        assert_eq!(tokenize("()"), vec!["(".to_string(), ")".to_owned()]);
+        assert_eq!(tokenize("()").unwrap(), vec!["(".to_string(), ")".to_owned()]);
         assert_eq!(
-            tokenize("( 15 )"),
+            tokenize("( 15 )").unwrap(),
             vec!["(".to_string(), "15".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(15)"),
+            tokenize("(15)").unwrap(),
             vec!["(".to_string(), "15".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(   15    )"),
+            tokenize("(   15    )").unwrap(),
             vec!["(".to_string(), "15".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(   15  16  )"),
+            tokenize("(   15  16  )").unwrap(),
             vec![
                 "(".to_string(),
                 "15".to_owned(),
@@ -91,19 +91,19 @@ mod tests {
     #[test]
     fn test_tokens_string_expressions() {
         assert_eq!(
-            tokenize("(\"ahoj\")"),
+            tokenize("(\"ahoj\")").unwrap(),
             vec!["(".to_string(), "\"ahoj".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(\"\")"),
+            tokenize("(\"\")").unwrap(),
             vec!["(".to_string(), "\"".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(\"ahoj svet\")"),
+            tokenize("(\"ahoj svet\")").unwrap(),
             vec!["(".to_string(), "\"ahoj svet".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(\"ahoj\" \"svet\")"),
+            tokenize("(\"ahoj\" \"svet\")").unwrap(),
             vec![
                 "(".to_string(),
                 "\"ahoj".to_string(),
@@ -112,19 +112,19 @@ mod tests {
             ]
         );
         assert_eq!(
-            tokenize("(\"ahoj\\\\ svet\")"),
+            tokenize("(\"ahoj\\\\ svet\")").unwrap(),
             vec!["(".to_string(), "\"ahoj\\ svet".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize("(\"ahoj\\\\ svet\")"),
+            tokenize("(\"ahoj\\\\ svet\")").unwrap(),
             vec!["(".to_string(), "\"ahoj\\ svet".to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize(r#"("ahoj\\ svet")"#),
+            tokenize(r#"("ahoj\\ svet")"#).unwrap(),
             vec!["(".to_string(), r#""ahoj\ svet"#.to_owned(), ")".to_owned()]
         );
         assert_eq!(
-            tokenize(r#"("ahoj\"\"\\ svet")"#),
+            tokenize(r#"("ahoj\"\"\\ svet")"#).unwrap(),
             vec![
                 "(".to_string(),
                 r#""ahoj""\ svet"#.to_owned(),
