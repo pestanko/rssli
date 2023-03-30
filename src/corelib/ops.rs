@@ -1,6 +1,6 @@
 use crate::{env::Environment, parser::Value};
 
-pub(crate) fn register(env: &mut Environment) -> () {
+pub(crate) fn register(env: &mut Environment) {
     // Arithmetic
     env.add_native("+", bi_add, false);
     env.add_native("-", bi_sub, false);

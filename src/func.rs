@@ -18,7 +18,7 @@ impl FuncDef {
                 name: "anonymous".to_owned(),
                 same_env: false,
             },
-            kind: kind,
+            kind,
         }
     }
 }

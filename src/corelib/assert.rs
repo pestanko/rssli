@@ -1,6 +1,6 @@
 use crate::{env::Environment, parser::Value};
 
-pub(crate) fn register(env: &mut Environment) -> () {
+pub(crate) fn register(env: &mut Environment) {
     // internal
     env.add_native("assert", assert_cond, true);
     env.add_native("assert.eq", assert_eq, true);
@@ -18,7 +18,10 @@ fn assert_eq(args: &[Value], fenv: &mut Environment) -> Value {
     let fst = fenv.eval(&args[0]);
     let snd = fenv.eval(&args[1]);
     if fst != snd {
-        panic!("Condition validation failed for assert({fst} == {snd}): {:?}", args)
+        panic!(
+            "Condition validation failed for assert({fst} == {snd}): {:?}",
+            args
+        )
     }
     Value::Nil
 }

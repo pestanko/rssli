@@ -74,10 +74,10 @@ impl Environment {
     pub fn get_var_or_func(&self, name: &str) -> anyhow::Result<Value> {
         let name_ref = &name.to_string();
         if let Some(val) = self.vars.get(name_ref) {
-            return Ok(val.clone());
+            return Ok(val);
         }
         if let Some(val) = self.funcs.get(name_ref) {
-            return Ok(Value::Func(val.kind.clone()));
+            return Ok(Value::Func(val.kind));
         }
         anyhow::bail!("Undeclared variable or function: {}", name)
     }
@@ -85,7 +85,7 @@ impl Environment {
     pub fn get_func_def(&self, name: &str) -> anyhow::Result<FuncDef> {
         let name_ref = &name.to_string();
         if let Some(val) = self.funcs.get(name_ref) {
-            return Ok(val.clone());
+            return Ok(val);
         }
 
         if let Some(val) = self.vars.get(name_ref) {
@@ -107,7 +107,7 @@ impl Environment {
         let val = self
             .vars
             .get(name)
-            .expect(&format!("Undeclared variable: {}", name));
+            .unwrap_or_else(|| panic!("Undeclared variable: {}", name));
         log::debug!("Evaluating symbol: {} to: {:?}", name, val);
         val
     }
@@ -171,7 +171,7 @@ impl Environment {
             }
             FuncKind::Defined(func) => {
                 log::debug!("Calling def [{}] with env: {:?}", metadata.name, env);
-                env.eval_def_func(func.clone(), args)
+                env.eval_def_func(func, args)
             }
         };
 
@@ -197,7 +197,7 @@ impl Environment {
         };
         log::debug!("Adding native function: {:?}", metadata);
         let df = FuncDef {
-            metadata: metadata,
+            metadata,
             kind: FuncKind::Native(func),
         };
 

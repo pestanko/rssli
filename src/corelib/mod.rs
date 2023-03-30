@@ -1,12 +1,12 @@
 use crate::env::Environment;
 
-mod core;
-mod ops;
-mod list;
-mod io;
-mod cast;
-mod internal;
 mod assert;
+mod cast;
+mod core;
+mod internal;
+mod io;
+mod list;
+mod ops;
 
 pub(crate) fn register(env: &mut Environment) {
     core::register(env);

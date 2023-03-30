@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use crate::func::FuncKind;
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct FuncValue {
@@ -41,21 +41,21 @@ impl Display for Value {
     }
 }
 
-impl Into<String> for &Value {
-    fn into(self) -> String {
-        self.to_string()
+impl From<&Value> for String {
+    fn from(val: &Value) -> Self {
+        val.to_string()
     }
 }
 
 impl From<bool> for Value {
     fn from(value: bool) -> Self {
-        return Value::Bool(value);
+        Value::Bool(value)
     }
 }
 
-impl Into<bool> for &Value {
-    fn into(self) -> bool {
-        match self {
+impl From<&Value> for bool {
+    fn from(val: &Value) -> Self {
+        match val {
             Value::Int(n) => *n != 0,
             Value::Float(n) => *n != 0.0,
             Value::String(s) => !s.is_empty(),
@@ -70,13 +70,13 @@ impl Into<bool> for &Value {
 
 impl From<i64> for Value {
     fn from(value: i64) -> Self {
-        return Value::Int(value);
+        Value::Int(value)
     }
 }
 
-impl Into<i64> for &Value {
-    fn into(self) -> i64 {
-        match self {
+impl From<&Value> for i64 {
+    fn from(val: &Value) -> Self {
+        match val {
             Value::Int(x) => *x,
             Value::Float(f) => *f as i64,
             Value::String(s) => s.parse::<i64>().expect("Cannot convert string to int"),
@@ -101,9 +101,9 @@ impl From<f64> for Value {
     }
 }
 
-impl Into<f64> for &Value {
-    fn into(self) -> f64 {
-        match self {
+impl From<&Value> for f64 {
+    fn from(val: &Value) -> Self {
+        match val {
             Value::Int(x) => *x as f64,
             Value::Float(f) => *f,
             Value::String(s) => s.parse::<f64>().expect("Cannot convert string to float"),
@@ -128,11 +128,11 @@ impl From<Vec<Value>> for Value {
     }
 }
 
-impl Into<Vec<Value>> for &Value {
-    fn into(self) -> Vec<Value> {
-        match self {
+impl From<&Value> for Vec<Value> {
+    fn from(val: &Value) -> Self {
+        match val {
             Value::List(l) => l.clone(),
-            _ => vec![self.clone()],
+            _ => vec![val.clone()],
         }
     }
 }
@@ -166,59 +166,35 @@ impl Value {
     }
 
     pub fn is_symbol(&self) -> bool {
-        match self {
-            Value::Symbol(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Symbol(_))
     }
 
     pub fn is_nil(&self) -> bool {
-        match self {
-            Value::Nil => true,
-            _ => false,
-        }
+        matches!(self, Value::Nil)
     }
 
     pub fn is_list(&self) -> bool {
-        match self {
-            Value::List(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::List(_))
     }
 
     pub fn is_string(&self) -> bool {
-        match self {
-            Value::String(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::String(_))
     }
 
     pub fn is_int(&self) -> bool {
-        match self {
-            Value::Int(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Int(_))
     }
 
     pub fn is_float(&self) -> bool {
-        match self {
-            Value::Float(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Float(_))
     }
 
     pub fn is_bool(&self) -> bool {
-        match self {
-            Value::Bool(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Bool(_))
     }
 
     pub fn is_func(&self) -> bool {
-        match self {
-            Value::Func(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Func(_))
     }
 
     pub fn type_name(&self) -> &'static str {
@@ -253,8 +229,8 @@ fn parse_tokens_from(tokens: &[String], from: usize) -> anyhow::Result<(usize, V
             values.push(Value::Bool(true));
         } else if token == "false" {
             values.push(Value::Bool(false));
-        } else if token.starts_with("\"") {
-            values.push(Value::String(token[1..].to_string()));
+        } else if let Some(val) = token.strip_prefix('\"') {
+            values.push(Value::String(val.to_owned()));
         } else if token == "(" {
             // recursive call
             let (np, vals) = parse_tokens_from(tokens, pos + 1)?;

@@ -2,7 +2,7 @@ use crate::func::{FuncDef, FuncMetadata};
 use crate::parser::FuncValue;
 use crate::{env::Environment, func::FuncKind, parser::Value};
 
-pub(crate) fn register(env: &mut Environment) -> () {
+pub(crate) fn register(env: &mut Environment) {
     env.add_native("fn", bi_func_def, true);
     env.add_native("def", bi_setvar, true);
     env.add_native("undef", bi_unsetvar, true);
@@ -30,7 +30,7 @@ fn bi_func_def(args: &[Value], fenv: &mut Environment) -> Value {
         args: func_args,
         body: Box::new(args[start_from + 1].clone()),
     };
-    let kind = FuncKind::Defined(func.clone());
+    let kind = FuncKind::Defined(func);
 
     if name == "anonymous" {
         return Value::Func(kind);

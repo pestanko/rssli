@@ -2,13 +2,12 @@ use std::io;
 
 use crate::{env::Environment, parser::Value};
 
-pub(crate) fn register(env: &mut Environment) -> () {
+pub(crate) fn register(env: &mut Environment) {
     // IO
     env.add_native("print", bi_print, false);
     env.add_native("io.print", bi_print, false);
     env.add_native("io.readline", bi_io_readline, false);
 }
-
 
 fn bi_print(args: &[Value], fenv: &mut Environment) -> Value {
     let parts: Vec<_> = fenv.eval_args(args).iter().map(|x| x.as_string()).collect();

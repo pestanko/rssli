@@ -13,10 +13,10 @@ pub(crate) fn register(env: &mut Environment) {
 
 fn bi_list_head(args: &[Value], fenv: &mut Environment) -> Value {
     let list = args[0].as_list();
-    fenv.eval(&list[0])}
+    fenv.eval(&list[0])
+}
 
 fn bi_list_last(args: &[Value], fenv: &mut Environment) -> Value {
     let list = args[0].as_list();
     fenv.eval(&list.last().cloned().unwrap())
 }
-

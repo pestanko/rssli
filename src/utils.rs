@@ -4,18 +4,18 @@ pub type HierCellMapRef<K, V> = Rc<RefCell<HierCellMap<K, V>>>;
 
 #[derive(Clone)]
 pub struct HierCellMap<K, V>
-    where
-        K: Clone,
-        V: Clone,
+where
+    K: Clone,
+    V: Clone,
 {
     parent: Option<HierCellMapRef<K, V>>,
     data: HashMap<K, V>,
 }
 
 impl<K, V> Default for HierCellMap<K, V>
-    where
-        K: Clone,
-        V: Clone,
+where
+    K: Clone,
+    V: Clone,
 {
     fn default() -> Self {
         Self {
@@ -26,9 +26,9 @@ impl<K, V> Default for HierCellMap<K, V>
 }
 
 impl<K, V> HierCellMap<K, V>
-    where
-        K: Clone + Hash + Eq,
-        V: Clone,
+where
+    K: Clone + Hash + Eq,
+    V: Clone,
 {
     pub fn get(&self, name: &K) -> Option<V> {
         if let Some(data) = self.data.get(name) {
@@ -85,14 +85,14 @@ impl<K, V> HierCellMap<K, V>
 
 #[derive(Clone)]
 pub struct HierCellMapWrap<K, V>(HierCellMapRef<K, V>)
-    where
-        K: Clone,
-        V: Clone;
+where
+    K: Clone,
+    V: Clone;
 
 impl<K, V> HierCellMapWrap<K, V>
-    where
-        K: Clone + Hash + Eq,
-        V: Clone,
+where
+    K: Clone + Hash + Eq,
+    V: Clone,
 {
     pub fn new(parent: Option<HierCellMapRef<K, V>>) -> Self {
         Self(Rc::new(RefCell::new(HierCellMap {

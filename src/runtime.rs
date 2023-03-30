@@ -60,8 +60,9 @@ mod tests {
     fn test_simple_prog_simple_ops() {
         let mut runtime = Runtime::new_default();
 
-        let result = runtime.eval_string(
-            r#"
+        let result = runtime
+            .eval_string(
+                r#"
         (
             (+ 5 15)
             (- 15 2)
@@ -71,20 +72,19 @@ mod tests {
             (+ "Ahoj" " svet")
         )
         "#,
-        ).unwrap();
+            )
+            .unwrap();
 
-        assert_eq!(
-            result,
-            Value::String("Ahoj svet".to_string()),
-        )
+        assert_eq!(result, Value::String("Ahoj svet".to_string()),)
     }
 
     #[test]
     fn test_simple_variables() {
         let mut runtime = Runtime::new_default();
 
-        let result = runtime.eval_string(
-            r#"
+        let result = runtime
+            .eval_string(
+                r#"
         (
            (def x 5)
            (def y 8)
@@ -94,20 +94,19 @@ mod tests {
            (+ x 20)
         )
         "#,
-        ).unwrap();
+            )
+            .unwrap();
 
-        assert_eq!(
-            result,
-            Value::Int(42),
-        );
+        assert_eq!(result, Value::Int(42),);
     }
 
     #[test]
     fn test_factorial_function() {
         let mut runtime = Runtime::new_default();
 
-        let result = runtime.eval_string(
-            r#"
+        let result = runtime
+            .eval_string(
+                r#"
            (
            (fn inc (y)
                 (+ y 1)
@@ -116,8 +115,8 @@ mod tests {
            (fn dec (z)
                 (- z 1)
            )
-           (fn factorial (x) 
-                (if (< x 1) 
+           (fn factorial (x)
+                (if (< x 1)
                     1
                     (* x (factorial (dec x)))
                 )
@@ -125,7 +124,8 @@ mod tests {
            (factorial 5)
         )
         "#,
-        ).unwrap();
+            )
+            .unwrap();
 
         assert_eq!(result, Value::Int(120));
     }
@@ -134,8 +134,9 @@ mod tests {
     fn test_fib_function() {
         let mut runtime = Runtime::new_default();
 
-        let result = runtime.eval_string(
-            r#"
+        let result = runtime
+            .eval_string(
+                r#"
         (
            (fn fib (x)
                 (if (< x 3)
@@ -149,7 +150,8 @@ mod tests {
            (fib 12)
         )
         "#,
-        ).unwrap();
+            )
+            .unwrap();
 
         assert_eq!(result, Value::Int(144),);
     }
@@ -168,9 +170,6 @@ mod tests {
         "#,
         );
 
-        assert_eq!(
-            result.unwrap(),
-            Value::Int(15),
-        );
+        assert_eq!(result.unwrap(), Value::Int(15),);
     }
 }

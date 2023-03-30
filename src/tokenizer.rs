@@ -29,11 +29,9 @@ pub fn tokenize(orig: &str) -> anyhow::Result<Vec<String>> {
             continue;
         }
 
-        if ch == '(' || ch == ')' || ch == '\"' || ch.is_whitespace() {
-            if !buffer.is_empty() {
-                tokens.push(buffer);
-                buffer = String::new();
-            }
+        if (ch == '(' || ch == ')' || ch == '\"' || ch.is_whitespace()) && !buffer.is_empty() {
+            tokens.push(buffer);
+            buffer = String::new();
         }
 
         match ch {
@@ -64,7 +62,10 @@ mod tests {
 
     #[test]
     fn test_tokens_simple_expressions() {
-        assert_eq!(tokenize("()").unwrap(), vec!["(".to_string(), ")".to_owned()]);
+        assert_eq!(
+            tokenize("()").unwrap(),
+            vec!["(".to_string(), ")".to_owned()]
+        );
         assert_eq!(
             tokenize("( 15 )").unwrap(),
             vec!["(".to_string(), "15".to_owned(), ")".to_owned()]

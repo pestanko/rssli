@@ -1,6 +1,6 @@
 use crate::{env::Environment, parser::Value};
 
-pub(crate) fn register(env: &mut Environment) -> () {
+pub(crate) fn register(env: &mut Environment) {
     // IO
     env.add_native("cast.string", cast_string, false);
     env.add_native("cast.int", cast_int, false);
