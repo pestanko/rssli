@@ -54,21 +54,16 @@ impl Environment {
     }
 
     pub fn eval(&mut self, value: &Value) -> Value {
-        match value {
+        log::debug!("[EVAL] Expression: {:?}", value);
+        let res = match value {
             Value::List(l) => self.eval_list(l),
             Value::Symbol(name) => self.get_var_or_func(name).unwrap(),
-            Value::Func(fx) => self.eval_any_func(
-                FuncDef {
-                    metadata: FuncMetadata {
-                        name: "anonymous".to_owned(),
-                        same_env: false,
-                    },
-                    kind: fx.clone(),
-                },
-                &[],
-            ),
+            Value::Func(fx) => self.eval_any_func(FuncDef::anonymous(fx.clone()), &[]),
             _ => value.clone(),
-        }
+        };
+
+        log::debug!("[EVAL] Expression result: {:?} => {:?}", value, res);
+        res
     }
 
     pub fn get_var_or_func(&self, name: &str) -> anyhow::Result<Value> {
@@ -100,19 +95,11 @@ impl Environment {
             }
         }
 
-        panic!("Undeclared function: {}", name);
-    }
-
-    pub fn eval_symbol(&self, name: &String) -> Value {
-        let val = self
-            .vars
-            .get(name)
-            .unwrap_or_else(|| panic!("Undeclared variable: {}", name));
-        log::debug!("Evaluating symbol: {} to: {:?}", name, val);
-        val
+        anyhow::bail!("Undeclared function: {}", name)
     }
 
     pub fn eval_list(&mut self, list: &[Value]) -> Value {
+        log::debug!("[EVAL] List: {:?}", list);
         if list.is_empty() {
             return Value::Nil;
         }
@@ -131,12 +118,6 @@ impl Environment {
     }
 
     pub fn eval_func(&mut self, name: &str, args: &[Value]) -> Value {
-        log::debug!(
-            "[EVAL] Evaluating function: \"{}\" with args {:?}",
-            name,
-            args
-        );
-
         let fd = self.get_func_def(name).unwrap();
         self.eval_any_func(fd, args)
     }
@@ -149,14 +130,20 @@ impl Environment {
             }
         }
 
-        log::debug!("Calling function with env: {:?}", self);
-
-        self.eval(&func.body)
+        let res = self.eval(&func.body);
+        log::debug!(">>> [EVAL] Function call result: {}", res);
+        res
     }
 
     fn eval_any_func(&mut self, func: FuncDef, args: &[Value]) -> Value {
         let mut new_env = self.make_child();
         let metadata = &func.metadata;
+        log::debug!(
+            "[EVAL] Function[{}] \"{}\" with args {:?}",
+            func.kind_name(),
+            func.name(),
+            args
+        );
 
         let env = if metadata.same_env {
             self
@@ -165,14 +152,8 @@ impl Environment {
         };
 
         let result = match func.kind {
-            FuncKind::Native(func) => {
-                log::trace!("Calling nat [{}] with env: {:?}", metadata.name, env);
-                func(args, env)
-            }
-            FuncKind::Defined(func) => {
-                log::debug!("Calling def [{}] with env: {:?}", metadata.name, env);
-                env.eval_def_func(func, args)
-            }
+            FuncKind::Native(func) => func(args, env),
+            FuncKind::Defined(func) => env.eval_def_func(func, args),
         };
 
         let final_result = if result.is_list() && result.as_list().len() == 1 {
@@ -181,12 +162,17 @@ impl Environment {
             result
         };
 
-        log::debug!("Function call result: {:?}", final_result);
+        log::debug!(
+            ">>> [EVAL] Function call result[{}]: {:?}",
+            metadata.name,
+            final_result
+        );
 
         final_result
     }
 
     pub fn eval_args(&mut self, args: &[Value]) -> Vec<Value> {
+        log::debug!("[EVAL] args: {:?}", args);
         args.iter().map(|arg| self.eval(arg)).collect()
     }
 
@@ -195,7 +181,7 @@ impl Environment {
             name: name.to_string(),
             same_env,
         };
-        log::debug!("Adding native function: {:?}", metadata);
+        log::debug!("[ADD] native function: {:?}", metadata);
         let df = FuncDef {
             metadata,
             kind: FuncKind::Native(func),

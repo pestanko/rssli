@@ -21,6 +21,17 @@ impl FuncDef {
             kind,
         }
     }
+
+    pub fn kind_name(&self) -> &'static str {
+        match &self.kind {
+            FuncKind::Native(_) => "native",
+            FuncKind::Defined(_) => "defined",
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.metadata.name
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -50,8 +61,8 @@ impl PartialOrd for FuncKind {
 impl std::fmt::Debug for FuncKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FuncKind::Native(_) => write!(f, "(Native function)"),
-            FuncKind::Defined(df) => write!(f, "(defined function {:?})", df.args),
+            FuncKind::Native(_) => write!(f, "(nat fn)"),
+            FuncKind::Defined(df) => write!(f, "(def fn {:?}, {:?})", df.args, df.body),
         }
     }
 }

@@ -10,6 +10,8 @@ fn assert_cond(args: &[Value], fenv: &mut Environment) -> Value {
     let cond = fenv.eval(&args[0]);
     if !cond.as_bool() {
         panic!("Condition validation failed for assert({cond}): {:?}", args)
+    } else {
+        log::info!("assert({cond}) passed");
     }
     Value::Nil
 }
@@ -22,6 +24,8 @@ fn assert_eq(args: &[Value], fenv: &mut Environment) -> Value {
             "Condition validation failed for assert({fst} == {snd}): {:?}",
             args
         )
+    } else {
+        log::info!("assert({fst} == {snd}) passed");
     }
     Value::Nil
 }
