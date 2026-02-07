@@ -8,15 +8,12 @@
     ; We will use a while loop to keep the game running until the user guesses the number
     (while (< attempts max_attempts) (
         (def guess (cast.int (io.readline "Enter your guess: ")))
-        (if (< guess secret_number) (
-            (io.print "Too low!")
-        )
-        (if (> guess secret_number) (
-            (io.print "Too high!")
-        )
-        (if (== guess secret_number) (
-            (io.print "You guessed it!")
-            (exit 0)
+        (if (< guess secret_number)
+            ((io.print "Too low!"))
+            (if (> guess secret_number)
+                ((io.print "Too high!"))
+                ((io.print "You guessed it!") (exit 0))
+            )
         )
         (def attempts (+ attempts 1))
     ))
