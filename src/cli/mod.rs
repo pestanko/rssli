@@ -5,7 +5,7 @@ use std::sync::Once;
 
 use clap::{Parser, Subcommand};
 
-use crate::{cli::interactive::process_interactive, parser::Value, Runtime};
+use crate::{cli::interactive::process_interactive, corelib::ProgramExitError, parser::Value, Runtime};
 
 static INIT: Once = Once::new();
 
@@ -44,15 +44,31 @@ fn process_file(file: &str) -> anyhow::Result<Value> {
     log::info!("Processing file {}", file);
     let content = fs::read_to_string(file)?;
     let mut runtime = Runtime::new_default();
-    let result = runtime.eval_file(file, &content)?;
-    Ok(result)
+    match runtime.eval_file(file, &content) {
+        Ok(result) => Ok(result),
+        Err(err) => {
+            if let Some(exit_err) = err.downcast_ref::<ProgramExitError>() {
+                log::info!("Program exited with code {}", exit_err.code);
+                std::process::exit(exit_err.code);
+            }
+            Err(err)
+        }
+    }
 }
 
 fn process_expression(expression: &str) -> anyhow::Result<Value> {
     log::info!("Processing expression {}", expression);
     let mut runtime = Runtime::new_default();
-    let result = runtime.eval_string(expression)?;
-    Ok(result)
+    match runtime.eval_string(expression) {
+        Ok(result) => Ok(result),
+        Err(err) => {
+            if let Some(exit_err) = err.downcast_ref::<ProgramExitError>() {
+                log::info!("Program exited with code {}", exit_err.code);
+                std::process::exit(exit_err.code);
+            }
+            Err(err)
+        }
+    }
 }
 
 #[derive(Parser, Debug)]

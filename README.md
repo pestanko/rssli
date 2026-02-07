@@ -276,6 +276,7 @@ The `examples/` directory contains sample programs:
 | `internal-sample.lsp` | Listing all built-in functions |
 | `simple-import.lsp` | File imports and using imported functions |
 | `math-utils.lsp` | Math utility library (used by simple-import.lsp) |
+| `guess-number.lsp` | A simple guess number game |
 
 ## Testing
 

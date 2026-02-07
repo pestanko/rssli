@@ -10,6 +10,8 @@ mod ops;
 mod system;
 mod math;
 
+pub use system::ProgramExitError;
+
 pub(crate) fn register(env: &mut Environment) {
     core::register(env);
     io::register(env);

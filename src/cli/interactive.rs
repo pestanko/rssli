@@ -1,6 +1,6 @@
 use rustyline::{error::ReadlineError, DefaultEditor};
 
-use crate::{parser::Value, Runtime};
+use crate::{corelib::ProgramExitError, parser::Value, Runtime};
 
 /**
  * Process the interactive mode
@@ -64,6 +64,11 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
                         println!("=> {:?}", result);
                     }
                     Err(err) => {
+                        if let Some(exit_err) = err.downcast_ref::<ProgramExitError>() {
+                            // Exit was called - stop current input but continue REPL
+                            log::debug!("Program exit called with code {}, continuing REPL", exit_err.code);
+                            continue;
+                        }
                         eprintln!("Error: {:?}", err);
                     }
                 }

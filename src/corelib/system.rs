@@ -1,5 +1,19 @@
 use crate::{env::Environment, parser::Value};
+use std::fmt;
 
+/// Custom error type for program exit
+#[derive(Debug, Clone)]
+pub struct ProgramExitError {
+    pub code: i32,
+}
+
+impl fmt::Display for ProgramExitError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Program exited with code {}", self.code)
+    }
+}
+
+impl std::error::Error for ProgramExitError {}
 
 pub(crate) fn register(env: &mut Environment) {
     env.add_native("exit", exit_with_code, false);
@@ -7,12 +21,12 @@ pub(crate) fn register(env: &mut Environment) {
 }
 
 fn exit_with_code(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
-    if let Some(code) = args.get(0) {
-        let code = fenv.eval(code)?.as_int();
-        std::process::exit(code as i32);
+    let code = if let Some(code_arg) = args.get(0) {
+        fenv.eval(code_arg)?.as_int() as i32
     } else {
-        std::process::exit(0);
-    }
+        0
+    };
+    Err(ProgramExitError { code }.into())
 }
 
 fn bi_import(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
