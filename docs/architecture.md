@@ -149,12 +149,18 @@ fn eval(&mut self, value: &Value) -> Value {
 
 ### List Evaluation
 
-`eval_list()` at `env.rs:101-118` decides how to handle a list:
+`eval_list()` at `env.rs:110-143` decides how to handle a list:
 
 - If the first element is a **Symbol**, treat it as a function call:
   look up the function by name, pass remaining elements as arguments.
 - If the first element is a **Func**, call it directly with remaining
   elements as arguments.
+- If the first element is a **List** (IIFE / do-block disambiguation):
+  evaluate the first element. If the result is a function **and** not
+  all elements in the outer list are lists, treat it as a function call
+  (IIFE pattern, e.g. `((make-adder 5) 10)`). Otherwise, evaluate the
+  remaining elements sequentially and return the last result (do-block
+  pattern, e.g. `((expr1) (expr2) (expr3))`).
 - Otherwise, evaluate each element and return as a new list.
 
 ### Symbol Resolution
@@ -213,6 +219,11 @@ Grandchild Environment
 - **`get(key)`** searches the current scope's HashMap first, then
   recursively checks the parent chain. Returns the first match.
 - **`set(key, value)`** always writes to the current scope only.
+- **`set_or_update(key, value)`** walks the parent chain to find an
+  existing binding and updates it in place. If no existing binding is
+  found anywhere in the chain, creates a new one in the current scope.
+  This is used by `def` and enables closures to mutate captured
+  variables (e.g. a counter pattern).
 - **`update(key, value)`** searches current scope first, then parents,
   updating in-place where found.
 - **`unset(key)`** removes from the current scope only.
@@ -223,9 +234,11 @@ children.
 
 ### Child Environment Creation
 
-`Environment::make_child()` at `env.rs:41-46` creates a new environment
+`Environment::make_child()` at `env.rs:48-55` creates a new environment
 whose `funcs` and `vars` are children of the current ones. This is called
-when entering a function body (for functions with `same_env = false`).
+when entering a native function body (for functions with
+`same_env = false`) and when executing closures (child of the captured
+environment).
 
 ## Functions
 
@@ -244,18 +257,21 @@ pub struct FuncDef {
 
 ```rust
 pub enum FuncKind {
-    Native(FuncType),       // fn(&[Value], &mut Environment) -> Value
-    Defined(FuncValue),     // user-defined: args + body
+    Native(FuncType),                   // fn(&[Value], &mut Environment) -> Value
+    Closure(FuncValue, Environment),    // user-defined: args + body + captured env
 }
 ```
 
 - **Native** functions are Rust function pointers. They receive raw
   (unevaluated) arguments and a mutable environment reference. The
   function decides whether and when to evaluate its arguments.
-- **Defined** functions are user-created via `(fn name (args) body)`.
-  They store a list of parameter names and a body expression.
+- **Closure** functions are user-created via `(fn name (args) body)`.
+  They store parameter names, a body expression, and a captured
+  environment (the lexical scope at the point of definition). The
+  captured environment is an `Rc`-based clone, so it shares state
+  with the defining scope.
 
-### FuncValue (User-Defined Functions)
+### FuncValue (Closure Body)
 
 ```rust
 pub struct FuncValue {
@@ -266,26 +282,33 @@ pub struct FuncValue {
 
 ### The `same_env` Flag
 
-`FuncMetadata.same_env` controls scoping during function calls
-(`env.rs:148-152`):
+`FuncMetadata.same_env` controls scoping during **native** function calls
+(`env.rs:160-167`):
 
-- `same_env = true`: the function executes in the **caller's**
-  environment. Used by special forms like `fn`, `def`, `undef` that need
-  to modify the calling scope.
-- `same_env = false` (default for user-defined and most native): a
-  **child environment** is created. Arguments and local variables don't
-  leak into the caller's scope.
+- `same_env = true`: the native function executes in the **caller's**
+  environment. Used by special forms like `fn`, `def`, `if`, `while`,
+  `for` that need to read or modify the calling scope.
+- `same_env = false` (default for most native functions): a **child
+  environment** is created. Arguments and local variables don't leak
+  into the caller's scope.
+
+The `same_env` flag is **not used** by closures. Closures always execute
+in a child of their captured environment, regardless of this flag.
 
 ### Function Call Flow
 
-`eval_any_func()` at `env.rs:138-172`:
+`eval_any_func()` at `env.rs:150-194`:
 
-1. Create a child environment (unless `same_env` is true).
-2. For **native** functions: call the Rust function pointer with raw args
-   and the chosen environment.
-3. For **defined** functions: bind each argument name to the evaluated
-   argument value in the environment, then evaluate the body.
-4. If the result is a single-element list, unwrap it (convenience
+1. For **native** functions: create a child environment; if `same_env`
+   is true, use the caller's environment instead. Call the Rust function
+   pointer with raw args and the chosen environment.
+2. For **closure** functions: create a child of the **captured**
+   environment (not the caller's). Evaluate each argument in the
+   **caller's** environment, bind the results to parameter names in the
+   closure child environment, then evaluate the body in that closure
+   environment. This ensures lexical scoping — the closure body sees
+   its definition-time bindings, not the caller's.
+3. If the result is a single-element list, unwrap it (convenience
    behavior).
 
 ## Standard Library (corelib)
@@ -300,20 +323,21 @@ functions to the environment via `env.add_native(name, fn_ptr, same_env)`.
 
 | Function | `same_env` | Description |
 |---|---|---|
-| `fn` | true | Defines a named or anonymous function |
-| `def` | true | Binds a variable in the current scope |
+| `fn` | true | Defines a named or anonymous function (closure) |
+| `def` | true | Binds a variable (uses `set_or_update` to walk parent chain) |
 | `undef` | true | Removes a variable from the current scope |
-| `if` | false | Conditional: `(if cond then [else])` |
-| `while` | false | Loop: `(while cond body)` |
-| `for` | false | Iteration: `(for var sequence body)` |
+| `if` | true | Conditional: `(if cond then [else])` |
+| `while` | true | Loop: `(while cond body)` |
+| `for` | true | Iteration: `(for var sequence body)` |
 
-`fn`, `def`, and `undef` use `same_env = true` because they need to
-modify the caller's scope (define functions/variables that persist after
-the call returns).
-
-`if`, `while`, and `for` use `same_env = false` and receive **unevaluated**
-arguments. They evaluate the condition and branches/body manually,
-implementing lazy evaluation (only the taken branch is evaluated).
+All core forms use `same_env = true` and receive **unevaluated**
+arguments. `fn`, `def`, and `undef` need to modify the caller's scope
+(define functions/variables that persist after the call returns).
+`if`, `while`, and `for` also operate in the caller's scope so that
+variables defined or mutated inside branches and loop bodies are
+visible after the form completes. They evaluate the condition and
+branches/body manually, implementing lazy evaluation (only the taken
+branch is evaluated).
 
 ### Operators (`corelib/ops.rs`)
 
@@ -389,10 +413,11 @@ Both use `same_env = true` to evaluate arguments in the caller's scope.
 - `Runtime::eval_string(prog)` - full pipeline: tokenize, parse,
   evaluate, return final result.
 
-When multiple top-level expressions are parsed, they're wrapped in a
-`Value::List` and evaluated. The final result is the **last** expression's
-value (matching typical Lisp semantics where a program's value is its
-last expression).
+When multiple top-level expressions are parsed, they are evaluated
+sequentially. The final result is the **last** expression's value
+(matching typical Lisp semantics where a program's value is its last
+expression). If the last result is itself a list, the last element of
+that list is returned.
 
 ## File Map
 
