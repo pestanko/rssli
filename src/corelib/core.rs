@@ -94,9 +94,7 @@ fn bi_cond_if(args: &[Value], fenv: &mut Environment) -> Value {
 }
 
 fn cycle_while(args: &[Value], fenv: &mut Environment) -> Value {
-    let mut cond = true;
-    while cond {
-        cond = fenv.eval(&args[0]).as_bool();
+    while fenv.eval(&args[0]).as_bool() {
         fenv.eval(&args[1]);
     }
     Value::Nil
