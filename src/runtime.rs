@@ -157,6 +157,102 @@ mod tests {
     }
 
     #[test]
+    fn test_neq_returns_true_for_unequal_values() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(
+            runtime.eval_string("(!= 1 2)").unwrap(),
+            Value::Bool(true)
+        );
+    }
+
+    #[test]
+    fn test_neq_returns_false_for_equal_values() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(
+            runtime.eval_string("(!= 1 1)").unwrap(),
+            Value::Bool(false)
+        );
+    }
+
+    #[test]
+    fn test_eq_returns_true_for_equal_values() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(
+            runtime.eval_string("(== 5 5)").unwrap(),
+            Value::Bool(true)
+        );
+    }
+
+    #[test]
+    fn test_eq_returns_false_for_unequal_values() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(
+            runtime.eval_string("(== 5 3)").unwrap(),
+            Value::Bool(false)
+        );
+    }
+
+    #[test]
+    fn test_eq_evaluates_first_arg_once() {
+        let mut runtime = Runtime::new_default();
+        // If == double-evaluates args[0], counter would be incremented
+        // twice (once for fst, once in loop), yielding 2 != 1.
+        let result = runtime
+            .eval_string(
+                r#"
+            (
+                (def counter 0)
+                (== (def counter (+ counter 1)) 1)
+            )
+            "#,
+            )
+            .unwrap();
+        assert_eq!(result, Value::Bool(true));
+    }
+
+    #[test]
+    fn test_while_skips_body_when_condition_initially_false() {
+        let mut runtime = Runtime::new_default();
+        let result = runtime
+            .eval_string(
+                r#"
+            (
+                (def x 0)
+                (while false (def x (+ x 1)))
+                x
+            )
+            "#,
+            )
+            .unwrap();
+        assert_eq!(result, Value::Int(0));
+    }
+
+    #[test]
+    fn test_while_returns_nil() {
+        let mut runtime = Runtime::new_default();
+        let result = runtime.eval_string("(while false 1)").unwrap();
+        assert_eq!(result, Value::Nil);
+    }
+
+    #[test]
+    fn test_nonempty_list_is_truthy() {
+        let mut runtime = Runtime::new_default();
+        let result = runtime
+            .eval_string(r#"(if (list.seq 1 3) 1 0)"#)
+            .unwrap();
+        assert_eq!(result, Value::Int(1));
+    }
+
+    #[test]
+    fn test_truthiness_values() {
+        // Verify Symbol/List truthiness via boolean coercion
+        assert!(Value::Symbol("x".to_string()).as_bool());
+        assert!(!Value::Symbol("".to_string()).as_bool());
+        assert!(Value::List(vec![Value::Int(1)]).as_bool());
+        assert!(!Value::List(vec![]).as_bool());
+    }
+
+    #[test]
     fn test_not_nice_function() {
         let mut runtime = Runtime::new_default();
 
