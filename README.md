@@ -1,0 +1,229 @@
+# RSSLI - Rust Simple Lisp Interpreter
+
+A toy Lisp interpreter written in Rust as a learning project. The goal is
+to explore how parsers and interpreters work by building one from scratch:
+tokenization, parsing S-expressions into an AST, and tree-walking
+evaluation with lexical scoping.
+
+This is **not** intended for production use. It is a personal playground for
+experimenting with language implementation concepts.
+
+## Building
+
+```bash
+cargo build
+```
+
+## Running
+
+Pass one or more `.lsp` files as arguments:
+
+```bash
+cargo run -- examples/simple-print.lsp
+```
+
+Output:
+
+```
+hello world!
+10
+result for 'examples/simple-print.lsp': String("10")
+```
+
+You can run multiple files in sequence:
+
+```bash
+cargo run -- examples/simple-aritmetic.lsp examples/simple-funcs.lsp
+```
+
+### Logging
+
+Enable debug logging with the `RUST_LOG` environment variable:
+
+```bash
+RUST_LOG=debug cargo run -- examples/simple-print.lsp
+RUST_LOG=trace cargo run -- examples/simple-funcs.lsp
+```
+
+## Language Guide
+
+### Data Types
+
+| Type | Examples | Description |
+|---|---|---|
+| Integer | `42`, `-3`, `0x1A`, `0b1010` | 64-bit signed integers (decimal, hex, binary) |
+| Float | `3.14`, `0.5` | 64-bit floating point |
+| String | `"hello world"` | UTF-8 strings, supports `\"` and `\\` escapes |
+| Boolean | `true`, `false` | |
+| Nil | `nil` | Null value |
+| List | `(1 2 3)` | Ordered collection |
+| Function | `(fn (x) (* x 2))` | First-class, can be stored in variables |
+
+### Variables
+
+```lisp
+(def x 42)
+(def name "world")
+(def result (+ x 8))
+(undef x)
+```
+
+### Arithmetic
+
+Operators auto-promote types: Int + Float = Float, anything + String = String concatenation.
+
+```lisp
+(+ 1 2)          ; => 3
+(+ 1.5 2)        ; => 3.5
+(+ "hello" " " "world")  ; => "hello world"
+(- 10 3)         ; => 7
+(* 4 5)          ; => 20
+(/ 15 3)         ; => 5
+```
+
+### Comparison
+
+```lisp
+(== 1 1)    ; => true
+(!= 1 2)    ; => true
+(< 1 2)     ; => true
+(> 3 1)     ; => true
+```
+
+### Logical Operators
+
+Short-circuit evaluation:
+
+```lisp
+(&& true true)    ; => true
+(|| false true)   ; => true
+```
+
+### Conditionals
+
+```lisp
+(if (< x 10)
+    (print "small")
+    (print "large"))
+```
+
+The else branch is optional:
+
+```lisp
+(if (== x 0) (print "zero"))
+```
+
+### Functions
+
+Named functions:
+
+```lisp
+(fn add (a b) (+ a b))
+(add 3 4)    ; => 7
+```
+
+Anonymous functions stored in variables:
+
+```lisp
+(def double (fn (x) (* x 2)))
+(double 5)   ; => 10
+```
+
+Functions can reference other functions by name (aliases):
+
+```lisp
+(def add2 +)
+(add2 1 2)   ; => 3
+```
+
+Recursion works:
+
+```lisp
+(fn factorial (n)
+    (if (< n 1)
+        1
+        (* n (factorial (- n 1)))))
+
+(factorial 5)    ; => 120
+```
+
+### Loops
+
+**For loop** over a sequence:
+
+```lisp
+(for i (list.seq 0 10) (print i))
+```
+
+**While loop:**
+
+```lisp
+(def counter 0)
+(while (< counter 5)
+    (def counter (+ counter 1)))
+```
+
+### Type Casting
+
+```lisp
+(cast.int "42")       ; => 42
+(cast.float 10)       ; => 10.0
+(cast.string 42)      ; => "42"
+(cast.bool 1)         ; => true
+(cast.list 5)         ; => (5)
+```
+
+### List Operations
+
+```lisp
+(list.seq 0 5)        ; => (0, 1, 2, 3, 4)
+(list.seq 0 10 2)     ; => (0, 2, 4, 6, 8)
+(head (1 2 3))        ; first element
+(last (1 2 3))        ; last element
+```
+
+### I/O
+
+```lisp
+(print "hello" "world")          ; prints: hello world
+(io.print "same as print")
+(def name (io.readline "Name:")) ; reads line from stdin
+```
+
+### Assertions
+
+```lisp
+(assert (== 1 1))
+(assert.eq 3 (+ 1 2))
+```
+
+### Debug / Introspection
+
+```lisp
+(internal.func.list)     ; lists all registered functions
+(internal.printenv)       ; dumps all functions and variables
+```
+
+## Examples
+
+The `examples/` directory contains sample programs:
+
+| File | Description |
+|---|---|
+| `simple-aritmetic.lsp` | Basic arithmetic operations |
+| `simple-print.lsp` | Variables and printing |
+| `simple-funcs.lsp` | Function definition, recursion (factorial) |
+| `simple-conditionals.lsp` | User input and if/else |
+| `simple-cycles.lsp` | For loop with sequence |
+| `funcs-in-vars.lsp` | Anonymous functions, function aliases, assertions |
+| `internal-sample.lsp` | Listing all built-in functions |
+
+## Testing
+
+```bash
+cargo test
+```
+
+## License
+
+This is a personal learning project.
