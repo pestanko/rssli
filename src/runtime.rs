@@ -32,7 +32,32 @@ impl Runtime {
         let path = PathBuf::from(file_path);
         let canonical_path = path.canonicalize()
             .map_err(|e| anyhow::anyhow!("Failed to canonicalize path {}: {}", file_path, e))?;
-        self.env.eval_string_with_file(content, Some(&canonical_path))
+        self.env.eval_string_with_file(content, Some(&canonical_path), false)
+    }
+
+    /// Evaluates a program preserving list results (no unwrapping).
+    /// This is useful for REPL where you want to see full list results from functions
+    /// like `list.map` and `list.filter`.
+    pub fn eval_string_preserve_lists(&mut self, prog: &str) -> anyhow::Result<Value> {
+        self.env.eval_string_with_file(prog, None, true)
+    }
+
+    /// Evaluates a program without unwrapping list results.
+    /// This is useful for testing functions that return lists, as `eval_string`
+    /// unwraps list results to their last element (REPL behavior).
+    pub fn eval_parsed(&mut self, prog: &str) -> anyhow::Result<Value> {
+        use crate::tokenizer::tokenize;
+        use crate::parser::parse_tokens;
+        
+        let tokens = tokenize(prog)?;
+        let parsed = parse_tokens(&tokens)?;
+        
+        // Evaluate all expressions, return last without unwrapping
+        let mut result = Value::Nil;
+        for expr in &parsed {
+            result = self.env.eval(expr)?;
+        }
+        Ok(result)
     }
 
     pub fn env(&self) -> &Environment {

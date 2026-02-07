@@ -9,6 +9,7 @@ mod list;
 mod ops;
 mod system;
 mod math;
+mod strings;
 
 pub use system::ProgramExitError;
 
@@ -22,4 +23,5 @@ pub(crate) fn register(env: &mut Environment) {
     assert::register(env);
     system::register(env);
     math::register(env);
+    strings::register(env);
 }

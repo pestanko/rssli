@@ -11,8 +11,9 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
     // 1. Create the editor
     let mut rl = DefaultEditor::new()?;
 
-    // 2. Load history from a hidden file in the home directory or local folder
-    if rl.load_history("history.txt").is_err() {
+    // 2. Load history from a file in the tmp folder
+    let history_file = std::env::temp_dir().join("rssli-history.txt");
+    if rl.load_history(history_file.as_path()).is_err() {
         println!("No previous history.");
     }
 
@@ -59,7 +60,7 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
 
                 // 5. Evaluate
                 let normal_line = normalize_line_to_list(line);
-                match runtime.eval_string(&normal_line) {
+                match runtime.eval_string_preserve_lists(&normal_line) {
                     Ok(result) => {
                         println!("=> {:?}", result);
                     }
@@ -89,7 +90,7 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
     }
 
     // 6. Save history before exiting
-    rl.save_history("history.txt")?;
+    rl.save_history(history_file.as_path())?;
 
     Ok(Value::Nil)
 }

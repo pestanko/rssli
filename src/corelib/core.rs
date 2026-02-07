@@ -65,7 +65,11 @@ fn bi_setvar(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     }
 
     let name = nameval.as_string();
-    let value = fenv.eval(&args[1])?;
+    let value = if let Some(value) = args.get(1) {
+        fenv.eval(value)?
+    } else {
+        Value::Nil
+    };
     log::trace!("Setting variable: {} to {}", name, value);
     fenv.vars.set_or_update(&name, &value);
 

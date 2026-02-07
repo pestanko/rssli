@@ -217,10 +217,10 @@ impl Environment {
     }
 
     pub fn eval_string(&mut self, prog: &str) -> anyhow::Result<Value> {
-        self.eval_string_with_file(prog, None)
+        self.eval_string_with_file(prog, None, false)
     }
 
-    pub fn eval_string_with_file(&mut self, prog: &str, file_path: Option<&PathBuf>) -> anyhow::Result<Value> {
+    pub fn eval_string_with_file(&mut self, prog: &str, file_path: Option<&PathBuf>, preserve_lists: bool) -> anyhow::Result<Value> {
         // Set current file context if provided
         let old_current_file = self.current_file.clone();
         if let Some(path) = file_path {
@@ -235,7 +235,9 @@ impl Environment {
             final_res = self.eval(expr)?;
         }
 
-        let final_res = if let Value::List(lst) = final_res {
+        let final_res = if preserve_lists {
+            final_res
+        } else if let Value::List(lst) = final_res {
             lst.last().cloned().unwrap_or(Value::Nil)
         } else {
             final_res
@@ -301,7 +303,7 @@ impl Environment {
         // Read and evaluate file with the file path context
         let result = match fs::read_to_string(&canonical_path) {
             Ok(content) => {
-                let eval_result = self.eval_string_with_file(&content, Some(&canonical_path));
+                let eval_result = self.eval_string_with_file(&content, Some(&canonical_path), false);
                 // Remove from importing set (even on error)
                 self.importing_files.remove(&canonical_path);
                 eval_result?
