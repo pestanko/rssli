@@ -289,4 +289,40 @@ mod tests {
 
         assert_eq!(result, Value::Int(15));
     }
+
+    #[test]
+    fn test_not_operator() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(runtime.eval_string("(not true)").unwrap(), Value::Bool(false));
+        assert_eq!(runtime.eval_string("(not false)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(not 0)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(not 1)").unwrap(), Value::Bool(false));
+        assert_eq!(runtime.eval_string("(not nil)").unwrap(), Value::Bool(true));
+    }
+
+    #[test]
+    fn test_leq_operator() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(runtime.eval_string("(<= 1 2)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(<= 2 2)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(<= 3 2)").unwrap(), Value::Bool(false));
+        assert_eq!(runtime.eval_string("(<= 1.5 2.0)").unwrap(), Value::Bool(true));
+    }
+
+    #[test]
+    fn test_geq_operator() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(runtime.eval_string("(>= 3 2)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(>= 2 2)").unwrap(), Value::Bool(true));
+        assert_eq!(runtime.eval_string("(>= 1 2)").unwrap(), Value::Bool(false));
+        assert_eq!(runtime.eval_string("(>= 2.0 1.5)").unwrap(), Value::Bool(true));
+    }
+
+    #[test]
+    fn test_modulo_operator() {
+        let mut runtime = Runtime::new_default();
+        assert_eq!(runtime.eval_string("(% 10 3)").unwrap(), Value::Int(1));
+        assert_eq!(runtime.eval_string("(% 10 5)").unwrap(), Value::Int(0));
+        assert_eq!(runtime.eval_string("(% 10.5 3.0)").unwrap(), Value::Float(1.5));
+    }
 }
