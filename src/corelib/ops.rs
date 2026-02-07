@@ -115,7 +115,7 @@ pub fn bi_div(args: &[Value], fenv: &mut Environment) -> Value {
 pub fn bi_cmp_eq(args: &[Value], fenv: &mut Environment) -> Value {
     let fst = fenv.eval(&args[0]);
 
-    for cond in args.iter() {
+    for cond in args.iter().skip(1) {
         let evl = fenv.eval(cond);
         if fst != evl {
             return Value::Bool(false);
