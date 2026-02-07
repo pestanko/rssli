@@ -7,6 +7,8 @@ mod internal;
 mod io;
 mod list;
 mod ops;
+mod system;
+mod math;
 
 pub(crate) fn register(env: &mut Environment) {
     core::register(env);
@@ -16,4 +18,6 @@ pub(crate) fn register(env: &mut Environment) {
     list::register(env);
     internal::register(env);
     assert::register(env);
+    system::register(env);
+    math::register(env);
 }

@@ -7,3 +7,5 @@
 claude/
 .claude/
 /docs/plans/**/*.md
+
+./history.txt
