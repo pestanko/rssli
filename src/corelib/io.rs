@@ -18,7 +18,7 @@ fn bi_print(args: &[Value], fenv: &mut Environment) -> Value {
 }
 
 fn bi_io_readline(args: &[Value], fenv: &mut Environment) -> Value {
-    if let Some(prompt) = args.get(0).map(|x| fenv.eval(x).as_string()) {
+    if let Some(prompt) = args.first().map(|x| fenv.eval(x).as_string()) {
         print!("{} ", prompt);
     }
     let mut buffer = String::new();

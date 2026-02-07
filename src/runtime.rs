@@ -32,7 +32,7 @@ impl Runtime {
         let parsed = parse_tokens(&tokens)?;
 
         let res = if parsed.len() == 1 {
-            self.env.eval(parsed.get(0).unwrap())
+            self.env.eval(parsed.first().unwrap())
         } else {
             self.env.eval(&Value::List(parsed))
         };
