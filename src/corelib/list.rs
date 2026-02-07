@@ -12,25 +12,31 @@ pub(crate) fn register(env: &mut Environment) {
     Value::Nil
 }*/
 
-fn bi_list_head(args: &[Value], fenv: &mut Environment) -> Value {
+fn bi_list_head(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     let list = args[0].as_list();
-    fenv.eval(&list[0])
+    let first = list.first().ok_or_else(|| anyhow::anyhow!("Cannot get head of empty list"))?;
+    fenv.eval(first)
 }
 
-fn bi_list_last(args: &[Value], fenv: &mut Environment) -> Value {
+fn bi_list_last(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     let list = args[0].as_list();
-    fenv.eval(&list.last().cloned().unwrap())
+    let last = list.last().ok_or_else(|| anyhow::anyhow!("Cannot get last element of empty list"))?;
+    fenv.eval(last)
 }
 
-fn list_seq(args: &[Value], fenv: &mut Environment) -> Value {
-    let start = fenv.eval(&args[0]).as_int();
-    let end = fenv.eval(&args[1]).as_int();
-    let step = args.get(2).unwrap_or(&Value::Int(1)).as_int();
+fn list_seq(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let start = fenv.eval(&args[0])?.as_int();
+    let end = fenv.eval(&args[1])?.as_int();
+    let step = if let Some(step_val) = args.get(2) {
+        fenv.eval(step_val)?.as_int()
+    } else {
+        1
+    };
 
     let mut list = Vec::new();
     for i in (start..end).step_by(step as usize) {
         list.push(Value::Int(i));
     }
 
-    Value::List(list)
+    Ok(Value::List(list))
 }

@@ -53,17 +53,17 @@ impl Environment {
         &self.vars
     }
 
-    pub fn eval(&mut self, value: &Value) -> Value {
+    pub fn eval(&mut self, value: &Value) -> anyhow::Result<Value> {
         log::debug!("[EVAL] Expression: {:?}", value);
         let res = match value {
-            Value::List(l) => self.eval_list(l),
-            Value::Symbol(name) => self.get_var_or_func(name).unwrap(),
-            Value::Func(fx) => self.eval_any_func(FuncDef::anonymous(fx.clone()), &[]),
+            Value::List(l) => self.eval_list(l)?,
+            Value::Symbol(name) => self.get_var_or_func(name)?,
+            Value::Func(fx) => self.eval_any_func(FuncDef::anonymous(fx.clone()), &[])?,
             _ => value.clone(),
         };
 
         log::debug!("[EVAL] Expression result: {:?} => {:?}", value, res);
-        res
+        Ok(res)
     }
 
     pub fn get_var_or_func(&self, name: &str) -> anyhow::Result<Value> {
@@ -98,10 +98,10 @@ impl Environment {
         anyhow::bail!("Undeclared function: {}", name)
     }
 
-    pub fn eval_list(&mut self, list: &[Value]) -> Value {
+    pub fn eval_list(&mut self, list: &[Value]) -> anyhow::Result<Value> {
         log::debug!("[EVAL] List: {:?}", list);
         if list.is_empty() {
-            return Value::Nil;
+            return Ok(Value::Nil);
         }
 
         if list[0].is_symbol() {
@@ -112,30 +112,33 @@ impl Environment {
             let df = FuncDef::anonymous(list[0].as_func());
             self.eval_any_func(df, &list[1..])
         } else {
-            let evaluated: Vec<Value> = list.iter().map(|arg| self.eval(arg)).collect();
-            Value::List(evaluated)
+            let mut evaluated = Vec::new();
+            for arg in list {
+                evaluated.push(self.eval(arg)?);
+            }
+            Ok(Value::List(evaluated))
         }
     }
 
-    pub fn eval_func(&mut self, name: &str, args: &[Value]) -> Value {
-        let fd = self.get_func_def(name).unwrap();
+    pub fn eval_func(&mut self, name: &str, args: &[Value]) -> anyhow::Result<Value> {
+        let fd = self.get_func_def(name)?;
         self.eval_any_func(fd, args)
     }
 
-    fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> Value {
+    fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> anyhow::Result<Value> {
         for (i, func_arg) in func.args.iter().enumerate() {
             if i < args.len() {
-                let value = self.eval(&args[i]);
+                let value = self.eval(&args[i])?;
                 self.vars.set(func_arg, &value);
             }
         }
 
-        let res = self.eval(&func.body);
+        let res = self.eval(&func.body)?;
         log::debug!(">>> [EVAL] Function call result: {}", res);
-        res
+        Ok(res)
     }
 
-    fn eval_any_func(&mut self, func: FuncDef, args: &[Value]) -> Value {
+    fn eval_any_func(&mut self, func: FuncDef, args: &[Value]) -> anyhow::Result<Value> {
         let mut new_env = self.make_child();
         let metadata = &func.metadata;
         log::debug!(
@@ -152,8 +155,8 @@ impl Environment {
         };
 
         let result = match func.kind {
-            FuncKind::Native(func) => func(args, env),
-            FuncKind::Defined(func) => env.eval_def_func(func, args),
+            FuncKind::Native(func) => func(args, env)?,
+            FuncKind::Defined(func) => env.eval_def_func(func, args)?,
         };
 
         let final_result = if result.is_list() && result.as_list().len() == 1 {
@@ -168,12 +171,16 @@ impl Environment {
             final_result
         );
 
-        final_result
+        Ok(final_result)
     }
 
-    pub fn eval_args(&mut self, args: &[Value]) -> Vec<Value> {
+    pub fn eval_args(&mut self, args: &[Value]) -> anyhow::Result<Vec<Value>> {
         log::debug!("[EVAL] args: {:?}", args);
-        args.iter().map(|arg| self.eval(arg)).collect()
+        let mut evaluated = Vec::new();
+        for arg in args {
+            evaluated.push(self.eval(arg)?);
+        }
+        Ok(evaluated)
     }
 
     pub fn add_native(&mut self, name: &str, func: FuncType, same_env: bool) {

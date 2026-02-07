@@ -9,20 +9,20 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("io.readline", bi_io_readline, false);
 }
 
-fn bi_print(args: &[Value], fenv: &mut Environment) -> Value {
-    let parts: Vec<_> = fenv.eval_args(args).iter().map(|x| x.as_string()).collect();
+fn bi_print(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let parts: Vec<_> = fenv.eval_args(args)?.iter().map(|x| x.as_string()).collect();
     let join = parts.join(" ");
     log::trace!("Print: {}", join);
     println!("{}", join);
-    Value::String(join)
+    Ok(Value::String(join))
 }
 
-fn bi_io_readline(args: &[Value], fenv: &mut Environment) -> Value {
-    if let Some(prompt) = args.first().map(|x| fenv.eval(x).as_string()) {
-        print!("{} ", prompt);
+fn bi_io_readline(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    if let Some(prompt) = args.first() {
+        let prompt_val = fenv.eval(prompt)?;
+        print!("{} ", prompt_val.as_string());
     }
     let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer).unwrap();
-    let val = Value::String(buffer.trim().to_owned());
-    val
+    io::stdin().read_line(&mut buffer)?;
+    Ok(Value::String(buffer.trim().to_owned()))
 }

@@ -7,26 +7,29 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("internal.printenv", internal_print_env, true);
 }
 
-fn bi_internal_func_nat_call(args: &[Value], fenv: &mut Environment) -> Value {
+fn bi_internal_func_nat_call(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     fenv.eval_func(&args[0].as_string(), &args[1..])
 }
 
-fn bi_internal_func_list(_args: &[Value], fenv: &mut Environment) -> Value {
+fn bi_internal_func_list(_args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     for k in fenv.funcs.keys() {
         println!("Function: {}", k);
     }
-
-    Value::Nil
+    Ok(Value::Nil)
 }
 
-fn internal_print_env(_args: &[Value], fenv: &mut Environment) -> Value {
+fn internal_print_env(_args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     for k in fenv.funcs.keys() {
-        println!("fn {}: {:?}", k, fenv.funcs.get(&k).unwrap());
+        if let Some(func_def) = fenv.funcs.get(&k) {
+            println!("fn {}: {:?}", k, func_def);
+        }
     }
 
     for v in fenv.vars.keys() {
-        println!("var {}: {:?}", v, fenv.vars.get(&v).unwrap());
+        if let Some(var_val) = fenv.vars.get(&v) {
+            println!("var {}: {:?}", v, var_val);
+        }
     }
 
-    Value::Nil
+    Ok(Value::Nil)
 }

@@ -29,13 +29,13 @@ impl Runtime {
         let parsed = parse_tokens(&tokens)?;
 
         let res = if parsed.len() == 1 {
-            self.env.eval(parsed.first().unwrap())
+            self.env.eval(parsed.first().unwrap())?
         } else {
-            self.env.eval(&Value::List(parsed))
+            self.env.eval(&Value::List(parsed))?
         };
 
         let final_res = if let Value::List(lst) = res {
-            lst.last().cloned().unwrap()
+            lst.last().cloned().unwrap_or(Value::Nil)
         } else {
             res
         };

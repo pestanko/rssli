@@ -6,26 +6,26 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("assert.eq", assert_eq, true);
 }
 
-fn assert_cond(args: &[Value], fenv: &mut Environment) -> Value {
-    let cond = fenv.eval(&args[0]);
+fn assert_cond(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let cond = fenv.eval(&args[0])?;
     if !cond.as_bool() {
-        panic!("Condition validation failed for assert({cond}): {:?}", args)
+        anyhow::bail!("Condition validation failed for assert({cond}): {:?}", args)
     } else {
         log::info!("assert({cond}) passed");
     }
-    Value::Nil
+    Ok(Value::Nil)
 }
 
-fn assert_eq(args: &[Value], fenv: &mut Environment) -> Value {
-    let fst = fenv.eval(&args[0]);
-    let snd = fenv.eval(&args[1]);
+fn assert_eq(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let fst = fenv.eval(&args[0])?;
+    let snd = fenv.eval(&args[1])?;
     if fst != snd {
-        panic!(
+        anyhow::bail!(
             "Condition validation failed for assert({fst} == {snd}): {:?}",
             args
         )
     } else {
         log::info!("assert({fst} == {snd}) passed");
     }
-    Value::Nil
+    Ok(Value::Nil)
 }

@@ -9,27 +9,27 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("cast.list", cast_list, false);
 }
 
-fn cast_string(args: &[Value], fenv: &mut Environment) -> Value {
-    let arg = &fenv.eval(&args[0]);
-    Value::String(arg.into())
+fn cast_string(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let arg = fenv.eval(&args[0])?;
+    Ok(Value::String((&arg).into()))
 }
 
-fn cast_int(args: &[Value], fenv: &mut Environment) -> Value {
-    let arg = &fenv.eval(&args[0]);
-    Value::Int(arg.into())
+fn cast_int(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let arg = fenv.eval(&args[0])?;
+    Ok(Value::Int((&arg).into()))
 }
 
-fn cast_float(args: &[Value], fenv: &mut Environment) -> Value {
-    let arg = &fenv.eval(&args[0]);
-    Value::Float(arg.into())
+fn cast_float(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let arg = fenv.eval(&args[0])?;
+    Ok(Value::Float((&arg).into()))
 }
 
-fn cast_bool(args: &[Value], fenv: &mut Environment) -> Value {
-    let arg = &fenv.eval(&args[0]);
-    Value::Bool(arg.into())
+fn cast_bool(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let arg = fenv.eval(&args[0])?;
+    Ok(Value::Bool((&arg).into()))
 }
 
-fn cast_list(args: &[Value], fenv: &mut Environment) -> Value {
-    let arg = &fenv.eval(&args[0]);
-    Value::List(arg.into())
+fn cast_list(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
+    let arg = fenv.eval(&args[0])?;
+    Ok(Value::List((&arg).into()))
 }

@@ -3,7 +3,7 @@ use crate::{
     parser::{FuncValue, Value},
 };
 
-pub type FuncType = fn(args: &[Value], fenv: &mut Environment) -> Value;
+pub type FuncType = fn(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value>;
 
 #[derive(Clone, Debug)]
 pub struct FuncDef {
