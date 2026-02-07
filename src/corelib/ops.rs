@@ -11,7 +11,6 @@ pub(crate) fn register(env: &mut Environment) {
 
     env.add_native("==", bi_cmp_eq, false);
     env.add_native("!=", bi_cmp_neq, false);
-    env.add_native("!=", bi_cmp_neq, false);
     env.add_native("<", bi_cmp_less, false);
     env.add_native(">", bi_cmp_great, false);
     env.add_native("&&", bi_land, false);
