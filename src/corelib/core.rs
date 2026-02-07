@@ -6,9 +6,9 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("fn", bi_func_def, true);
     env.add_native("def", bi_setvar, true);
     env.add_native("undef", bi_unsetvar, true);
-    env.add_native("if", bi_cond_if, false);
-    env.add_native("while", cycle_while, false);
-    env.add_native("for", cycle_for, false);
+    env.add_native("if", bi_cond_if, true);
+    env.add_native("while", cycle_while, true);
+    env.add_native("for", cycle_for, true);
 }
 
 // Core
@@ -38,7 +38,7 @@ fn bi_func_def(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> 
         body: Box::new(body),
     };
 
-    let kind = FuncKind::Defined(func);
+    let kind = FuncKind::Closure(func, fenv.clone());
 
     if name == "anonymous" {
         return Ok(Value::Func(kind));
@@ -65,9 +65,13 @@ fn bi_setvar(args: &[Value], fenv: &mut Environment) -> anyhow::Result<Value> {
     }
 
     let name = nameval.as_string();
-    let value = fenv.eval(&args[1])?;
+    let value = if let Some(value) = args.get(1) {
+        fenv.eval(value)?
+    } else {
+        Value::Nil
+    };
     log::trace!("Setting variable: {} to {}", name, value);
-    fenv.vars.set(&name, &value);
+    fenv.vars.set_or_update(&name, &value);
 
     Ok(value)
 }

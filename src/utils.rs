@@ -56,6 +56,20 @@ where
         self.data.insert(name.clone(), value.clone());
     }
 
+    pub fn set_or_update(&mut self, name: &K, value: &V) -> bool {
+        if self.data.contains_key(name) {
+            self.data.insert(name.clone(), value.clone());
+            return true;
+        }
+        if let Some(parent) = self.parent.as_ref() {
+            if parent.borrow_mut().set_or_update(name, value) {
+                return true;
+            }
+        }
+        self.data.insert(name.clone(), value.clone());
+        true
+    }
+
     pub fn unset(&mut self, name: &K) {
         self.data.remove(name);
     }
@@ -119,6 +133,10 @@ where
 
     pub fn set(&mut self, name: &K, value: &V) {
         self.0.borrow_mut().set(name, value)
+    }
+
+    pub fn set_or_update(&mut self, name: &K, value: &V) {
+        self.0.borrow_mut().set_or_update(name, value);
     }
 
     pub fn unset(&mut self, name: &K) {

@@ -25,7 +25,7 @@ impl FuncDef {
     pub fn kind_name(&self) -> &'static str {
         match &self.kind {
             FuncKind::Native(_) => "native",
-            FuncKind::Defined(_) => "defined",
+            FuncKind::Closure(..) => "closure",
         }
     }
 
@@ -43,7 +43,7 @@ pub struct FuncMetadata {
 #[derive(Clone)]
 pub enum FuncKind {
     Native(FuncType),
-    Defined(FuncValue),
+    Closure(FuncValue, Environment),
 }
 
 impl PartialEq for FuncKind {
@@ -62,7 +62,7 @@ impl std::fmt::Debug for FuncKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FuncKind::Native(_) => write!(f, "(nat fn)"),
-            FuncKind::Defined(df) => write!(f, "(def fn {:?}, {:?})", df.args, df.body),
+            FuncKind::Closure(df, _) => write!(f, "(closure fn {:?}, {:?})", df.args, df.body),
         }
     }
 }

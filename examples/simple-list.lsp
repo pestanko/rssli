@@ -1,0 +1,10 @@
+(
+    (def lst (list 1 2 3))
+    (io.print lst)
+    (io.print (list.len lst))
+    (io.print (list.append lst 4))
+    (io.print (list.reverse lst))
+    (io.print (list.filter lst (fn (x) (> x 1))))
+    (io.print (list.reduce lst (fn (x y) (+ x y))))
+    (io.print (list.map lst (fn (x) (* x 2))))
+)
