@@ -32,6 +32,29 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
                 // 4. Add the line to history
                 let _ = rl.add_history_entry(line);
 
+                // handle special commands (starts with /)
+                if line.starts_with("/") {
+                    let command = line.split_whitespace().next().unwrap_or("");
+                    match command {
+                        "exit" => {
+                            std::process::exit(0);
+                        }
+                        "list" => {
+                            println!("Listing functions and variables");
+                            for k in runtime.env().funcs().keys() {
+                                println!("Function: {}", k);
+                            }
+                            for v in runtime.env().vars().keys() {
+                                println!("Variable: {}", v);
+                            }
+                        }
+                        _ => {
+                            println!("Unknown command: {}", command);
+                        }
+                    }
+                    continue;
+                }
+
                 // 5. Evaluate
                 match runtime.eval_string(line) {
                     Ok(result) => {

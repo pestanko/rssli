@@ -41,6 +41,10 @@ impl Runtime {
         };
         Ok(final_res)
     }
+
+    pub fn env(&self) -> &Environment {
+        &self.env
+    }
 }
 
 #[cfg(test)]
