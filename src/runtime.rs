@@ -268,4 +268,25 @@ mod tests {
 
         assert_eq!(result.unwrap(), Value::Int(15),);
     }
+
+    #[test]
+    fn test_comments_are_ignored() {
+        let mut runtime = Runtime::new_default();
+
+        let result = runtime
+            .eval_string(
+                r#"
+        (
+           ; define variables
+           (def x 5)   ; x = 5
+           (def y 10)  ; y = 10
+           ; compute the sum
+           (+ x y)
+        )
+        "#,
+            )
+            .unwrap();
+
+        assert_eq!(result, Value::Int(15));
+    }
 }
