@@ -9,6 +9,7 @@ pub(crate) fn register(env: &mut Environment) {
     env.add_native("if", bi_cond_if, false);
     env.add_native("while", cycle_while, false);
     env.add_native("for", cycle_for, false);
+    env.add_native("exit", exit_with_code, false);
 }
 
 // Core
@@ -112,4 +113,13 @@ fn cycle_for(args: &[Value], fenv: &mut Environment) -> Value {
     }
 
     Value::Nil
+}
+
+fn exit_with_code(args: &[Value], fenv: &mut Environment) -> Value {
+    if let Some(code) = args.get(0) {
+        let code = fenv.eval(code).as_int();
+        std::process::exit(code as i32);
+    } else {
+        std::process::exit(0);
+    }
 }

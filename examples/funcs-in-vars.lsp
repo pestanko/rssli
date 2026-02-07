@@ -1,4 +1,5 @@
 (
+    ; Define a function in a variable
     (def add (fn (a b) (
         (+ a b)
     )))
