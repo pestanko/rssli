@@ -227,20 +227,98 @@ mod tests {
     }
 
     #[test]
-    fn test_not_nice_function() {
+    fn test_basic_closure_captures_variable() {
+        let mut runtime = Runtime::new_default();
+
+        let result = runtime
+            .eval_string(
+                r#"
+        (
+           (def n 10)
+           (fn add-n (x) (+ x n))
+           (add-n 5)
+        )
+        "#,
+            )
+            .unwrap();
+
+        assert_eq!(result, Value::Int(15));
+    }
+
+    #[test]
+    fn test_closure_returning_closure() {
+        let mut runtime = Runtime::new_default();
+
+        let result = runtime
+            .eval_string(
+                r#"
+        (
+           (fn make-adder (n) (fn (x) (+ n x)))
+           (def add5 (make-adder 5))
+           (add5 10)
+        )
+        "#,
+            )
+            .unwrap();
+
+        assert_eq!(result, Value::Int(15));
+    }
+
+    #[test]
+    fn test_immediately_invoked_returned_closure() {
+        let mut runtime = Runtime::new_default();
+
+        let result = runtime
+            .eval_string(
+                r#"
+        (
+           (fn make-adder (n) (fn (x) (+ n x)))
+           ((make-adder 5) 10)
+        )
+        "#,
+            )
+            .unwrap();
+
+        assert_eq!(result, Value::Int(15));
+    }
+
+    #[test]
+    fn test_closure_shared_mutable_state() {
+        let mut runtime = Runtime::new_default();
+
+        let result = runtime
+            .eval_string(
+                r#"
+        (
+           (def counter 0)
+           (fn inc () (def counter (+ counter 1)))
+           (inc)
+           (inc)
+           (inc)
+           counter
+        )
+        "#,
+            )
+            .unwrap();
+
+        assert_eq!(result, Value::Int(3));
+    }
+
+    #[test]
+    fn test_closure_does_not_see_caller_variables() {
         let mut runtime = Runtime::new_default();
 
         let result = runtime.eval_string(
             r#"
         (
            (fn func (x) (+ c x))
-           (fn func2(c) (func 5))
+           (fn func2 (c) (func 5))
            (func2 10)
         )
         "#,
         );
 
-        assert_eq!(result.unwrap(), Value::Int(15),);
+        assert!(result.is_err());
     }
 
     #[test]

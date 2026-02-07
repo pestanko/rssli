@@ -1,7 +1,7 @@
 use crate::func::{FuncDef, FuncMetadata, FuncType};
 use crate::{
     func::FuncKind,
-    parser::{parse_tokens, FuncValue, Value},
+    parser::{parse_tokens, Value},
     tokenizer::tokenize,
     utils::HierCellMapWrap,
 };
@@ -97,7 +97,7 @@ impl Environment {
                 return Ok(FuncDef {
                     metadata: FuncMetadata {
                         name: name.to_owned(),
-                        same_env: true,
+                        same_env: false,
                     },
                     kind: val.as_func(),
                 });
@@ -120,6 +120,19 @@ impl Environment {
         } else if list[0].is_func() {
             let df = FuncDef::anonymous(list[0].as_func());
             self.eval_any_func(df, &list[1..])
+        } else if list[0].is_list() {
+            let all_lists = list.iter().all(|v| v.is_list());
+            let first = self.eval(&list[0])?;
+            if first.is_func() && !all_lists {
+                let df = FuncDef::anonymous(first.as_func());
+                self.eval_any_func(df, &list[1..])
+            } else {
+                let mut result = first;
+                for expr in &list[1..] {
+                    result = self.eval(expr)?;
+                }
+                Ok(result)
+            }
         } else {
             let mut evaluated = Vec::new();
             for arg in list {
@@ -134,21 +147,7 @@ impl Environment {
         self.eval_any_func(fd, args)
     }
 
-    fn eval_def_func(&mut self, func: FuncValue, args: &[Value]) -> anyhow::Result<Value> {
-        for (i, func_arg) in func.args.iter().enumerate() {
-            if i < args.len() {
-                let value = self.eval(&args[i])?;
-                self.vars.set(func_arg, &value);
-            }
-        }
-
-        let res = self.eval(&func.body)?;
-        log::debug!(">>> [EVAL] Function call result: {}", res);
-        Ok(res)
-    }
-
     fn eval_any_func(&mut self, func: FuncDef, args: &[Value]) -> anyhow::Result<Value> {
-        let mut new_env = self.make_child();
         let metadata = &func.metadata;
         log::debug!(
             "[EVAL] Function[{}] \"{}\" with args {:?}",
@@ -157,15 +156,26 @@ impl Environment {
             args
         );
 
-        let env = if metadata.same_env {
-            self
-        } else {
-            &mut new_env
-        };
-
         let result = match func.kind {
-            FuncKind::Native(func) => func(args, env)?,
-            FuncKind::Defined(func) => env.eval_def_func(func, args)?,
+            FuncKind::Native(native_fn) => {
+                let mut new_env = self.make_child();
+                let env = if metadata.same_env {
+                    self
+                } else {
+                    &mut new_env
+                };
+                native_fn(args, env)?
+            }
+            FuncKind::Closure(func_val, captured_env) => {
+                let mut closure_env = captured_env.make_child();
+                for (i, param) in func_val.args.iter().enumerate() {
+                    if i < args.len() {
+                        let value = self.eval(&args[i])?;
+                        closure_env.vars.set(param, &value);
+                    }
+                }
+                closure_env.eval(&func_val.body)?
+            }
         };
 
         let final_result = if result.is_list() && result.as_list().len() == 1 {
@@ -220,16 +230,15 @@ impl Environment {
         let tokens = tokenize(prog)?;
         let parsed = parse_tokens(&tokens)?;
 
-        let res = if parsed.len() == 1 {
-            self.eval(parsed.first().unwrap())?
-        } else {
-            self.eval(&Value::List(parsed))?
-        };
+        let mut final_res = Value::Nil;
+        for expr in &parsed {
+            final_res = self.eval(expr)?;
+        }
 
-        let final_res = if let Value::List(lst) = res {
+        let final_res = if let Value::List(lst) = final_res {
             lst.last().cloned().unwrap_or(Value::Nil)
         } else {
-            res
+            final_res
         };
 
         // Restore previous current file context
