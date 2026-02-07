@@ -1,5 +1,3 @@
-use std::sync::Once;
-
 use crate::{
     corelib,
     env::Environment,
@@ -14,7 +12,6 @@ pub struct Runtime {
 
 impl Runtime {
     pub fn new() -> Self {
-        setup_logger();
         Self {
             env: Environment::default(),
         }
@@ -44,12 +41,6 @@ impl Runtime {
         };
         Ok(final_res)
     }
-}
-
-static INIT: Once = Once::new();
-
-fn setup_logger() {
-    INIT.call_once(env_logger::init);
 }
 
 #[cfg(test)]
@@ -159,37 +150,25 @@ mod tests {
     #[test]
     fn test_neq_returns_true_for_unequal_values() {
         let mut runtime = Runtime::new_default();
-        assert_eq!(
-            runtime.eval_string("(!= 1 2)").unwrap(),
-            Value::Bool(true)
-        );
+        assert_eq!(runtime.eval_string("(!= 1 2)").unwrap(), Value::Bool(true));
     }
 
     #[test]
     fn test_neq_returns_false_for_equal_values() {
         let mut runtime = Runtime::new_default();
-        assert_eq!(
-            runtime.eval_string("(!= 1 1)").unwrap(),
-            Value::Bool(false)
-        );
+        assert_eq!(runtime.eval_string("(!= 1 1)").unwrap(), Value::Bool(false));
     }
 
     #[test]
     fn test_eq_returns_true_for_equal_values() {
         let mut runtime = Runtime::new_default();
-        assert_eq!(
-            runtime.eval_string("(== 5 5)").unwrap(),
-            Value::Bool(true)
-        );
+        assert_eq!(runtime.eval_string("(== 5 5)").unwrap(), Value::Bool(true));
     }
 
     #[test]
     fn test_eq_returns_false_for_unequal_values() {
         let mut runtime = Runtime::new_default();
-        assert_eq!(
-            runtime.eval_string("(== 5 3)").unwrap(),
-            Value::Bool(false)
-        );
+        assert_eq!(runtime.eval_string("(== 5 3)").unwrap(), Value::Bool(false));
     }
 
     #[test]
@@ -237,9 +216,7 @@ mod tests {
     #[test]
     fn test_nonempty_list_is_truthy() {
         let mut runtime = Runtime::new_default();
-        let result = runtime
-            .eval_string(r#"(if (list.seq 1 3) 1 0)"#)
-            .unwrap();
+        let result = runtime.eval_string(r#"(if (list.seq 1 3) 1 0)"#).unwrap();
         assert_eq!(result, Value::Int(1));
     }
 
@@ -293,8 +270,14 @@ mod tests {
     #[test]
     fn test_not_operator() {
         let mut runtime = Runtime::new_default();
-        assert_eq!(runtime.eval_string("(not true)").unwrap(), Value::Bool(false));
-        assert_eq!(runtime.eval_string("(not false)").unwrap(), Value::Bool(true));
+        assert_eq!(
+            runtime.eval_string("(not true)").unwrap(),
+            Value::Bool(false)
+        );
+        assert_eq!(
+            runtime.eval_string("(not false)").unwrap(),
+            Value::Bool(true)
+        );
         assert_eq!(runtime.eval_string("(not 0)").unwrap(), Value::Bool(true));
         assert_eq!(runtime.eval_string("(not 1)").unwrap(), Value::Bool(false));
         assert_eq!(runtime.eval_string("(not nil)").unwrap(), Value::Bool(true));
@@ -306,7 +289,10 @@ mod tests {
         assert_eq!(runtime.eval_string("(<= 1 2)").unwrap(), Value::Bool(true));
         assert_eq!(runtime.eval_string("(<= 2 2)").unwrap(), Value::Bool(true));
         assert_eq!(runtime.eval_string("(<= 3 2)").unwrap(), Value::Bool(false));
-        assert_eq!(runtime.eval_string("(<= 1.5 2.0)").unwrap(), Value::Bool(true));
+        assert_eq!(
+            runtime.eval_string("(<= 1.5 2.0)").unwrap(),
+            Value::Bool(true)
+        );
     }
 
     #[test]
@@ -315,7 +301,10 @@ mod tests {
         assert_eq!(runtime.eval_string("(>= 3 2)").unwrap(), Value::Bool(true));
         assert_eq!(runtime.eval_string("(>= 2 2)").unwrap(), Value::Bool(true));
         assert_eq!(runtime.eval_string("(>= 1 2)").unwrap(), Value::Bool(false));
-        assert_eq!(runtime.eval_string("(>= 2.0 1.5)").unwrap(), Value::Bool(true));
+        assert_eq!(
+            runtime.eval_string("(>= 2.0 1.5)").unwrap(),
+            Value::Bool(true)
+        );
     }
 
     #[test]
@@ -323,6 +312,9 @@ mod tests {
         let mut runtime = Runtime::new_default();
         assert_eq!(runtime.eval_string("(% 10 3)").unwrap(), Value::Int(1));
         assert_eq!(runtime.eval_string("(% 10 5)").unwrap(), Value::Int(0));
-        assert_eq!(runtime.eval_string("(% 10.5 3.0)").unwrap(), Value::Float(1.5));
+        assert_eq!(
+            runtime.eval_string("(% 10.5 3.0)").unwrap(),
+            Value::Float(1.5)
+        );
     }
 }

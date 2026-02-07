@@ -23,8 +23,9 @@ Source Code (string)
    Result (Value)
 ```
 
-The entry point is `Runtime::eval_string()` in `runtime.rs:30-46`, which
-chains tokenize -> parse -> eval and returns the final `Value`.
+The entry point is the `cli` module (`src/cli/mod.rs`), which parses command-line
+arguments and then calls `Runtime::eval_string()` in `runtime.rs:30-46`.
+This function chains tokenize -> parse -> eval and returns the final `Value`.
 
 ## Stage 1: Tokenizer
 
@@ -397,7 +398,10 @@ last expression).
 
 ```
 src/
-├── main.rs          Entry point: reads .lsp files, creates Runtime, prints results
+├── main.rs          Entry point: delegates to the `cli` module
+├── cli/
+│   ├── mod.rs       Handles command-line argument parsing and mode selection (eval, file, interactive)
+│   └── interactive.rs Interactive REPL implementation
 ├── lib.rs           Module declarations, re-exports Runtime
 ├── tokenizer.rs     tokenize() - string to tokens
 ├── parser.rs        parse_tokens() - tokens to Value AST, Value type + conversions

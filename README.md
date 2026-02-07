@@ -16,10 +16,14 @@ cargo build
 
 ## Running
 
-Pass one or more `.lsp` files as arguments:
+RSSLI has three modes of operation, specified by a subcommand.
+
+### File Mode
+
+Evaluates a Lisp script from a file.
 
 ```bash
-cargo run -- examples/simple-print.lsp
+cargo run -- file examples/simple-print.lsp
 ```
 
 Output:
@@ -27,14 +31,35 @@ Output:
 ```
 hello world!
 10
-result for 'examples/simple-print.lsp': String("10")
 ```
 
-You can run multiple files in sequence:
+### Eval Mode
+
+Evaluates a single Lisp expression from a string.
 
 ```bash
-cargo run -- examples/simple-aritmetic.lsp examples/simple-funcs.lsp
+cargo run -- eval "(+ 10 20)"
 ```
+
+### Interactive Mode (REPL)
+
+Starts an interactive Read-Eval-Print Loop.
+
+```bash
+cargo run -- interactive
+```
+
+You can type expressions at the prompt:
+
+```
+rssli> (+ 1 2)
+=> Int(3)
+rssli> (def x 10)
+=> Nil
+rssli> x
+=> Int(10)
+```
+
 
 ### Logging
 

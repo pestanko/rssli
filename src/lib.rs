@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod corelib;
 pub mod env;
 mod func;

@@ -37,7 +37,9 @@ pub fn tokenize(orig: &str) -> anyhow::Result<Vec<String>> {
             continue;
         }
 
-        if (ch == '(' || ch == ')' || ch == '\"' || ch == ';' || ch.is_whitespace()) && !buffer.is_empty() {
+        if (ch == '(' || ch == ')' || ch == '\"' || ch == ';' || ch.is_whitespace())
+            && !buffer.is_empty()
+        {
             tokens.push(buffer);
             buffer = String::new();
         }
