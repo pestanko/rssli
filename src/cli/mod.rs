@@ -44,7 +44,7 @@ fn process_file(file: &str) -> anyhow::Result<Value> {
     log::info!("Processing file {}", file);
     let content = fs::read_to_string(file)?;
     let mut runtime = Runtime::new_default();
-    let result = runtime.eval_string(&content)?;
+    let result = runtime.eval_file(file, &content)?;
     Ok(result)
 }
 

@@ -172,6 +172,38 @@ Recursion works:
 (factorial 5)    ; => 120
 ```
 
+### Imports
+
+Import code from other files using the `import` function. Imported files are evaluated in the current scope, so all functions and variables defined in the imported file become available.
+
+```lisp
+(import "math-utils.lsp")
+(square 5)       ; => 25 (if square is defined in math-utils.lsp)
+```
+
+**Path resolution:**
+- Relative paths are resolved relative to the directory of the file that contains the import statement
+- If no file context is available (e.g., in interactive mode), paths are resolved relative to the current working directory
+- If the file extension is omitted, `.lsp` is automatically appended
+- Absolute paths are also supported
+
+**Circular imports:**
+- Circular imports are automatically detected and prevented
+- An error is raised if a file tries to import itself (directly or indirectly)
+
+**Example:**
+
+```lisp
+; math-utils.lsp
+(fn square (x) (* x x))
+(def pi 3.14159)
+
+; main.lsp
+(import "math-utils.lsp")
+(io.print "Square of 5:" (square 5))
+(io.print "Pi:" pi)
+```
+
 ### Loops
 
 **For loop** over a sequence:
@@ -242,6 +274,8 @@ The `examples/` directory contains sample programs:
 | `simple-cycles.lsp` | For loop with sequence |
 | `funcs-in-vars.lsp` | Anonymous functions, function aliases, assertions |
 | `internal-sample.lsp` | Listing all built-in functions |
+| `simple-import.lsp` | File imports and using imported functions |
+| `math-utils.lsp` | Math utility library (used by simple-import.lsp) |
 
 ## Testing
 

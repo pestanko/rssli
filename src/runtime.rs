@@ -1,9 +1,9 @@
 use crate::{
     corelib,
     env::Environment,
-    parser::{parse_tokens, Value},
-    tokenizer::tokenize,
+    parser::Value,
 };
+use std::path::PathBuf;
 
 #[derive(Default)]
 pub struct Runtime {
@@ -25,21 +25,14 @@ impl Runtime {
     }
 
     pub fn eval_string(&mut self, prog: &str) -> anyhow::Result<Value> {
-        let tokens = tokenize(prog)?;
-        let parsed = parse_tokens(&tokens)?;
+        self.env.eval_string(prog)
+    }
 
-        let res = if parsed.len() == 1 {
-            self.env.eval(parsed.first().unwrap())?
-        } else {
-            self.env.eval(&Value::List(parsed))?
-        };
-
-        let final_res = if let Value::List(lst) = res {
-            lst.last().cloned().unwrap_or(Value::Nil)
-        } else {
-            res
-        };
-        Ok(final_res)
+    pub fn eval_file(&mut self, file_path: &str, content: &str) -> anyhow::Result<Value> {
+        let path = PathBuf::from(file_path);
+        let canonical_path = path.canonicalize()
+            .map_err(|e| anyhow::anyhow!("Failed to canonicalize path {}: {}", file_path, e))?;
+        self.env.eval_string_with_file(content, Some(&canonical_path))
     }
 
     pub fn env(&self) -> &Environment {

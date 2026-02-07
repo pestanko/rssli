@@ -9,3 +9,15 @@ exit
 /list
 (10)
 10
+ls
+pwd
+/list
+io.print "hell"
++ 100 20 23
+-14
+(;cast)
+def x 10
+def y 16
++ x y
++ x y 100
+import
