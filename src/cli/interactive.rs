@@ -36,16 +36,18 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
                 if line.starts_with("/") {
                     let command = line.split_whitespace().next().unwrap_or("");
                     match command {
-                        "exit" => {
+                        "/exit" => {
                             std::process::exit(0);
                         }
-                        "list" => {
+                        "/list" => {
                             println!("Listing functions and variables");
+                            println!("Functions:");
                             for k in runtime.env().funcs().keys() {
-                                println!("Function: {}", k);
+                                println!("{}", k);
                             }
+                            println!("Variables:");
                             for v in runtime.env().vars().keys() {
-                                println!("Variable: {}", v);
+                                println!("{}", v);
                             }
                         }
                         _ => {
@@ -56,7 +58,8 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
                 }
 
                 // 5. Evaluate
-                match runtime.eval_string(line) {
+                let normal_line = normalize_line_to_list(line);
+                match runtime.eval_string(&normal_line) {
                     Ok(result) => {
                         println!("=> {:?}", result);
                     }
@@ -66,11 +69,11 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
                 }
             }
             Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
-                break;
+                log::debug!("CTRL-C");
+                continue;
             }
             Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
+                log::debug!("CTRL-D");
                 break;
             }
             Err(err) => {
@@ -84,4 +87,28 @@ pub(crate) fn process_interactive() -> anyhow::Result<Value> {
     rl.save_history("history.txt")?;
 
     Ok(Value::Nil)
+}
+
+
+/**
+ * Cases to cover:
+ * - line is already a list - do nothing
+ * - line starts with ; - do nothing
+ * - line is empty - do nothing (this should be handled before)
+ * - otherwise, add a ( at the beginning and a ) at the end
+ */
+fn normalize_line_to_list(line: &str) -> String {
+    if line.is_empty() {
+        return "".to_string();
+    }
+
+    if line.starts_with(";") {
+        return line.to_string();
+    }
+
+    if line.starts_with("(") && line.ends_with(")") {
+        return line.to_string();
+    }
+
+    format!("({})", line)
 }

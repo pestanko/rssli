@@ -1,2 +1,11 @@
 #V2
 exit
+/ext
+/list
+/help
+/exit
+/list
+(def x 10)
+/list
+(10)
+10
